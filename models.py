@@ -2,21 +2,22 @@ import datetime as dt
 from sqlmodel import Field, SQLModel
 from pydantic import validator, ValidationError
 from typing import Optional
+import re
 
 
-class Property_Location(SQLModel, table=True):
+class PropertyLocation(SQLModel, table=True):
     """
     Model to store Property location and channel information which is obtained via the
     map search Rightmove API.
     """
-    property_id: int = Field(default=None, primary_key=True, foreign_key="property_data.property_id")
+    property_id: int = Field(default=None, primary_key=True, foreign_key="propertydata.property_id")
     property_asatdt: dt.datetime = Field(default=None)
     property_channel: str
     property_longitude: float
     property_latitude: float
 
 
-class Property_Data(SQLModel, table=True):
+class PropertyData(SQLModel, table=True):
     """
     Model to store all Property data provided by the Rightmove API, such as property type, bedrooms, bathrooms etc.
     """
@@ -25,6 +26,7 @@ class Property_Data(SQLModel, table=True):
     property_validto: dt.datetime = Field(default=dt.datetime(9999, 12, 31))
     bedrooms: Optional[int] = Field(default=0)
     bathrooms: Optional[int] = Field(default=0)
+    area: Optional[float]
     summary: str
     address: str
     property_subtype: Optional[str|None]
@@ -49,3 +51,13 @@ class Property_Data(SQLModel, table=True):
     @validator("bedrooms", "bathrooms")
     def integer_conversion(cls, v):
         return v or 0
+
+
+class PropertyImages(SQLModel, table=True):
+    """
+    Model to store Property location and channel information which is obtained via the
+    map search Rightmove API.
+    """
+    property_id: int = Field(default=None, primary_key=True, foreign_key="propertydata.property_id")
+    image_url: str = Field(default=None, primary_key=True)
+    image_caption: Optional[str]

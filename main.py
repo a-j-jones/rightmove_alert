@@ -55,5 +55,5 @@ if __name__ == "__main__":
 
 	# asyncio.run(download_properties("RENT"))
 	# asyncio.run(download_properties("BUY"))
-	asyncio.run(download_property_data(update=True, cutoff=cutoff))
+	asyncio.run(download_property_data(update=True))
 
