@@ -1,7 +1,8 @@
 import datetime as dt
-from sqlmodel import Field, SQLModel
-from pydantic import validator, ValidationError
 from typing import Optional
+
+from pydantic import validator
+from sqlmodel import Field, SQLModel, create_engine
 
 
 class Property_Location(SQLModel, table=True):
@@ -27,7 +28,7 @@ class Property_Data(SQLModel, table=True):
     bathrooms: Optional[int] = Field(default=0)
     summary: str
     address: str
-    property_subtype: Optional[str|None]
+    property_subtype: Optional[str | None]
     property_description: str
     premium_listing: bool
     price_amount: float
@@ -49,3 +50,9 @@ class Property_Data(SQLModel, table=True):
     @validator("bedrooms", "bathrooms")
     def integer_conversion(cls, v):
         return v or 0
+
+
+if __name__ == "__main__":
+    db_filename = "properties.db"
+    engine = create_engine(f"sqlite:///{db_filename}", echo=True)
+    SQLModel.metadata.create_all(engine)
