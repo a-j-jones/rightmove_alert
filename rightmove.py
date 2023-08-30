@@ -1,14 +1,11 @@
-import asyncio
 from functools import lru_cache
+from json import JSONDecodeError
 from textwrap import wrap
 from typing import Optional
+
 import httpx
 import requests
-import pandas as pd
-import sqlite3
 from tqdm.asyncio import tqdm
-from database import RightmoveDatabase
-from json import JSONDecodeError
 
 
 class Rightmove:
@@ -155,7 +152,7 @@ class Rightmove:
         r = await self.client.get("https://www.rightmove.co.uk/api/_searchByIds", params=params)
 
         try:
-            data = r.json()
+            data = r.json()["properties"]
             self.database.load_property_data(data, ids)
         except JSONDecodeError:
             data = None

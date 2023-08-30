@@ -51,8 +51,7 @@ async def download_property_data(update, cutoff=None):
 
 
 if __name__ == "__main__":
-	cutoff = dt.datetime.strptime("2022-10-23 22:52:19.077663", '%Y-%m-%d %H:%M:%S.%f')
-
+	# cutoff = dt.datetime.strptime("2022-10-23 22:52:19.077663", '%Y-%m-%d %H:%M:%S.%f')
 	# asyncio.run(download_properties("RENT"))
 	# asyncio.run(download_properties("BUY"))
 	asyncio.run(download_property_data(update=True))

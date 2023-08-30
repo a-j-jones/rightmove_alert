@@ -102,6 +102,9 @@ class RightmoveDatabase:
 		with Session(self.engine) as session:
 			found_ids = [p["id"] for p in data]
 			for id in ids:
+
+				# Check each ID which was searched for, if there was no information return then we assume that
+				# the property has been removed from the Rightmove website, and end the property's validto variable.
 				if id not in found_ids:
 					current_time = dt.datetime.now()
 					statement = (select(PropertyData)
@@ -115,7 +118,10 @@ class RightmoveDatabase:
 						session.add(existing_record)
 						session.commit()
 
+			# Loop through each property which was returned by the request:
 			for prop in data:
+
+				# Check for an existing record which is currently valid:
 				current_time = dt.datetime.now()
 				statement = (select(PropertyData)
 							 .where(PropertyData.property_id == prop["id"])
@@ -156,18 +162,32 @@ class RightmoveDatabase:
 					first_visible=pd.to_datetime(prop["firstVisibleDate"])
 				)
 
+				# If an existing record was not found we can add it the DB transaction and move to the next
+				# property.
 				lookup = p.dict()
 				if not existing_record:
 					session.add(p)
 					continue
 
+				# Otherwise we need to check if there are any changes to the data, if so we will mark the latest
+				# record as no longer valid, and create a new record which is valid from the current moment.
 				for img_data in prop["propertyImages"]["images"]:
-					img = PropertyImages(
-						property_id=prop["id"],
-						image_caption=img_data["caption"],
-						image_url=img_data["srcUrl"]
-					)
-					session.add(img)
+					property_id = prop["id"]
+					image_url = img_data["srcUrl"]
+					statement = (select(PropertyImages)
+					             .where(PropertyImages.property_id == property_id)
+					             .where(PropertyImages.image_url == image_url)
+					             )
+					results = session.exec(statement)
+					existing_image = results.first()
+
+					if not existing_image:
+						img = PropertyImages(
+							property_id=property_id,
+							image_caption=img_data["caption"],
+							image_url=image_url
+						)
+						session.add(img)
 
 				difference = False
 				for key, value in existing_record.dict().items():
