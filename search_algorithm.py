@@ -1,11 +1,12 @@
 import asyncio
+import datetime as dt
 from typing import Optional
 
-import datetime as dt
 import numpy as np
+from tqdm.asyncio import tqdm
+
 from database import RightmoveDatabase
 from rightmove import Rightmove
-from tqdm.asyncio import tqdm
 
 
 class RightmoveSearcher:
@@ -17,17 +18,18 @@ class RightmoveSearcher:
 		self.tasks = []
 
 	async def get_all_properties(self,
-	                             region_search: str,
-	                             lat1: float,
-	                             lat2: float,
-	                             lon1: float,
-	                             lon2: float,
-	                             load_sql: bool = True,
-	                             channel: Optional[str] = "BUY",
-	                             index: Optional[int] = 0,
-	                             radius: Optional[int] = 5,
-	                             sstc: Optional[bool] = False,
-	                             exclude: Optional[list] = None) -> bool:
+								 region_search: str,
+								 lat1: float,
+								 lat2: float,
+								 lon1: float,
+								 lon2: float,
+								 load_sql: bool = True,
+								 channel: Optional[str] = "BUY",
+								 index: Optional[int] = 0,
+								 radius: Optional[int] = 5,
+								 sstc: Optional[bool] = False,
+								 exclude: Optional[list] = None,
+								 include: Optional[list] = None) -> bool:
 		"""
 		Interacts with the rightmove.Rightmove API wrapper to perform a grid search of an entire area, finding
 		every possible property on the website within given coordinates and region search term.
@@ -66,17 +68,18 @@ class RightmoveSearcher:
 		await self._get_all_properties_recurse(**api_args)
 
 	async def _get_all_properties_recurse(self,
-	                                      region_search: str,
-	                                      lat1: float,
-	                                      lat2: float,
-	                                      lon1: float,
-	                                      lon2: float,
-	                                      load_sql: bool = True,
-	                                      channel: Optional[str] = "BUY",
-	                                      index: Optional[int] = 0,
-	                                      radius: Optional[int] = 5,
-	                                      sstc: Optional[bool] = False,
-	                                      exclude: Optional[list] = None) -> bool:
+										  region_search: str,
+										  lat1: float,
+										  lat2: float,
+										  lon1: float,
+										  lon2: float,
+										  load_sql: bool = True,
+										  channel: Optional[str] = "BUY",
+										  index: Optional[int] = 0,
+										  radius: Optional[int] = 5,
+										  sstc: Optional[bool] = False,
+										  exclude: Optional[list] = None,
+										  include: Optional[list] = None) -> bool:
 		"""
 		See documentation for get_all_properties()
 		"""
@@ -118,9 +121,9 @@ class RightmoveSearcher:
 
 	@staticmethod
 	def get_viewport_size(lat1: float,
-	                      lat2: float,
-	                      lon1: float,
-	                      lon2: float) -> float:
+						  lat2: float,
+						  lon1: float,
+						  lon2: float) -> float:
 		"""
 		Takes the viewport parameters (two sets of longitude and latitude) and returns the size of the rectangle
 		:param lat1:            float   1st Latitude value
@@ -136,9 +139,9 @@ class RightmoveSearcher:
 
 	@staticmethod
 	def get_new_viewports(lat1: float,
-	                      lat2: float,
-	                      lon1: float,
-	                      lon2: float) -> list[dict, dict]:
+						  lat2: float,
+						  lon1: float,
+						  lon2: float) -> list[dict, dict]:
 		"""
 		Takes a viewport and divides it into two equal viewports which can then be used to narrow the search
 		for properties.

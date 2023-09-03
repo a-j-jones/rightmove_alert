@@ -18,6 +18,7 @@ async def download_properties(channel):
 			lon2=0.36117554,
 			channel=channel,
 			exclude=["sharedOwnership", "retirement"],
+			include=["garden"],
 			load_sql=True
 		)
 		await task
@@ -54,5 +55,5 @@ if __name__ == "__main__":
 	# cutoff = dt.datetime.strptime("2022-10-23 22:52:19.077663", '%Y-%m-%d %H:%M:%S.%f')
 	# asyncio.run(download_properties("RENT"))
 	# asyncio.run(download_properties("BUY"))
-	asyncio.run(download_property_data(update=True))
+	asyncio.run(download_property_data(update=False))
 
