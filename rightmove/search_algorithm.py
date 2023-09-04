@@ -5,8 +5,8 @@ from typing import Optional
 import numpy as np
 from tqdm.asyncio import tqdm
 
-from database import RightmoveDatabase
-from rightmove import Rightmove
+from rightmove.database import RightmoveDatabase
+from rightmove.api_wrapper import Rightmove
 
 
 class RightmoveSearcher:
@@ -52,10 +52,7 @@ class RightmoveSearcher:
         :param radius:          int     (default=5)     Search radius in miles
         :param sstc:            bool    (default=False) Sold Subject to Contracts (include True or False)
         :param exclude:         list    (default=None)  List of options to exclude
-                                                        Valid options are:
-                                                            - newHome
-                                                            - retirement
-                                                            - sharedOwnership
+        :param include:         list    (default=None)  List of options to include
         """
 
         api_args = dict(locals())

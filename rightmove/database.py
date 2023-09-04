@@ -5,7 +5,7 @@ from typing import List
 import pandas as pd
 from sqlmodel import create_engine, distinct, func, or_, select, Session
 
-from models import PropertyData, PropertyImages, PropertyLocation
+from rightmove.models import PropertyData, PropertyImages, PropertyLocation
 
 
 class RightmoveDatabase:
@@ -139,6 +139,14 @@ class RightmoveDatabase:
                 else:
                     area = None
 
+                # Get the 'display update date':
+                try:
+                    added_or_reduced = pd.to_datetime(prop.get("addedOrReduced").split(" ")[-1], dayfirst=True)
+                    if str(added_or_reduced) == "NaT":
+                        added_or_reduced = None
+                except Exception:
+                    added_or_reduced = None
+
                 p = PropertyData(
                     property_id=prop["id"],
                     property_validfrom=current_time,
@@ -161,15 +169,9 @@ class RightmoveDatabase:
                     students=prop["students"],
                     auction=prop["auction"],
                     last_update=current_time,
-                    first_visible=pd.to_datetime(prop["firstVisibleDate"])
+                    first_visible=pd.to_datetime(prop["firstVisibleDate"]),
+                    last_displayed_update=added_or_reduced
                 )
-
-                # If an existing record was not found we can add it the DB transaction and move to the next
-                # property.
-                lookup = p.dict()
-                if not existing_record:
-                    session.add(p)
-                    continue
 
                 # Otherwise we need to check if there are any changes to the data, if so we will mark the latest
                 # record as no longer valid, and create a new record which is valid from the current moment.
@@ -190,6 +192,13 @@ class RightmoveDatabase:
                             image_url=image_url
                         )
                         session.add(img)
+
+                # If an existing record was not found we can add it the DB transaction and move to the next
+                # property.
+                lookup = p.dict()
+                if not existing_record:
+                    session.add(p)
+                    continue
 
                 difference = False
                 for key, value in existing_record.dict().items():

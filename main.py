@@ -1,9 +1,9 @@
 import asyncio
 
-from database import RightmoveDatabase
-from models import sqlite_file_name
-from rightmove import Rightmove
-from search_algorithm import RightmoveSearcher
+from rightmove.database import RightmoveDatabase
+from rightmove.models import sqlite_file_name
+from rightmove.api_wrapper import Rightmove
+from rightmove.search_algorithm import RightmoveSearcher
 
 
 async def download_properties(channel):
@@ -18,7 +18,7 @@ async def download_properties(channel):
             lon1=-0.5245971,
             lon2=0.36117554,
             channel=channel,
-            exclude=["sharedOwnership", "retirement"],
+            exclude=["newHome", "sharedOwnership", "retirement"],
             include=["garden"],
             load_sql=True
         )
@@ -53,7 +53,5 @@ async def download_property_data(update, cutoff=None):
 
 
 if __name__ == "__main__":
-    # cutoff = dt.datetime.strptime("2022-10-23 22:52:19.077663", '%Y-%m-%d %H:%M:%S.%f')
-    # asyncio.run(download_properties("RENT"))
     asyncio.run(download_properties("BUY"))
     asyncio.run(download_property_data(update=False))

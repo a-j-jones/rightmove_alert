@@ -47,6 +47,7 @@ class PropertyData(SQLModel, table=True):
     auction: bool
     first_visible: Optional[dt.datetime]
     last_update: Optional[dt.datetime]
+    last_displayed_update: Optional[dt.datetime]
 
     class Config:
         validate_assignment = True
@@ -68,4 +69,5 @@ class PropertyImages(SQLModel, table=True):
 
 if __name__ == "__main__":
     engine = create_engine(sqlite_url, echo=False)
+    SQLModel.metadata.drop_all(engine)
     SQLModel.metadata.create_all(engine)

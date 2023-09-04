@@ -1,10 +1,10 @@
 import asyncio
 import json
 
-from database import RightmoveDatabase
-from models import sqlite_file_name
-from rightmove import Rightmove
-from search_algorithm import RightmoveSearcher
+from rightmove.api_wrapper import Rightmove
+from rightmove.database import RightmoveDatabase
+from rightmove.models import sqlite_file_name
+from rightmove.search_algorithm import RightmoveSearcher
 
 
 async def main():
@@ -20,11 +20,11 @@ async def main():
             await asyncio.sleep(1)
 
 
-async def get_property():
+async def get_property(property_id, channel="BUY"):
     # Initialise objects
     database = RightmoveDatabase(sqlite_file_name)
     async with Rightmove(database=database) as rightmove_api:
-        data = await rightmove_api.get_property_data("BUY", [127535897])
+        data = await rightmove_api.get_property_data(channel, [property_id])
         print(json.dumps(data, indent=4))
 
 
@@ -41,4 +41,4 @@ def get_id_len():
 
 
 if __name__ == "__main__":
-    asyncio.run(get_property())
+    asyncio.run(get_property(127535897))

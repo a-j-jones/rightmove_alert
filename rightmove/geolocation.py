@@ -6,7 +6,7 @@ import pandas as pd
 from numba import njit
 from sqlmodel import create_engine
 
-from models import sqlite_url
+from rightmove.models import sqlite_url
 
 
 @njit()
@@ -68,5 +68,6 @@ if __name__ == "__main__":
         df[file] = result
 
     df["gbp_per_sqft"] = df["price_amount"] / df["area"]
+    df["last_update"] = pd.to_datetime(df.last_update).dt.date
     df = df.sort_values("gbp_per_sqft")
     df[df["40mins"]].to_csv("40mins.csv", index=False)
