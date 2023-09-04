@@ -1,0 +1,541 @@
+@font-face {
+  font-family:Effra;
+  src:url(https://media.rightmove.co.uk/assets/shared-fonts/effra/Effra_WLatn_Md.woff2) format("woff2"),url(https://media.qa.rightmove.com/assets/shared-fonts/effra/Effra_WLatn_Md.woff2) format("woff2");
+  font-style:normal;
+  font-weight:500;
+}
+@font-face {
+  font-family:Effra;
+  src:url(https://media.rightmove.co.uk/assets/shared-fonts/effra/Effra_WLatn_Rg.woff2) format("woff2"),url(https://media.qa.rightmove.com/assets/shared-fonts/effra/Effra_WLatn_Rg.woff2) format("woff2");
+  font-style:normal;
+  font-weight:400;
+}
+  body {
+    color:#53535f;
+    font-family:Effra,sans-serif;
+    font-size:16px;
+    font-weight:400;
+    letter-spacing:normal;
+  }
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: #fff;
+    color: #53535f;
+    font-family: Effra,sans-serif;
+    font-size: 16px;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
+    font-smoothing: antialiased;
+    font-weight: 400;
+    letter-spacing: normal;
+    margin: 0;
+    padding: 0;
+    text-rendering: optimizeSpeed;
+}
+
+body {
+    padding: 0;
+    margin: 0;
+    font-family: Effra,sans-serif;
+    background-color: #f1f1f2;
+    width: 100%;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+    -moz-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+}
+
+html {
+    padding: 0;
+    margin: 0;
+    font-family: Effra,sans-serif;
+    background-color: #f1f1f2;
+    width: 100%;
+}
+
+.PropertyList_bottomPageContainer__1IVdm  {
+    margin: 0 auto;
+    background-color: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(0,0,0,.15);
+    padding: 16px;
+}
+
+@media (min-width: 87.5em){
+  .PropertyList_bottomPageContainer__1IVdm  {
+    padding: 24px;
+  }
+}
+
+*,:after,:before {
+    box-sizing: border-box;
+}
+
+* ,:after,:before {
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+.PropertyList_propertyListControls__yc0xr  {
+    display: flex;
+    justify-content: space-between;
+    flex-direction: row;
+    align-items: center;
+    padding-bottom: 16px;
+}
+
+.PropertyList_noMoreProperties__lBWaQ  {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+p {
+    margin: unset;
+}
+
+button {
+    background-color: #fff;
+    color: #53535f;
+    font-family: Effra,sans-serif;
+    font-size: 16px;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
+    font-smoothing: antialiased;
+    font-weight: 400;
+    letter-spacing: normal;
+    margin: 0;
+    padding: 0;
+    text-rendering: optimizeSpeed;
+}
+
+.dsrm_button {
+    -webkit-tap-highlight-color: rgba(0,0,0,0);
+}
+
+.dsrm_button {
+    border-radius: 8px;
+    border-style: solid;
+    border-width: 2px;
+    color: #000433;
+    cursor: pointer;
+    font-family: Effra,sans-serif;
+    min-width: 96px;
+    -webkit-tap-highlight-color: transparent;
+    transition-duration: .24s;
+    font-size: 16px;
+    line-height: 24px;
+    letter-spacing: .1px;
+    font-weight: 500;
+}
+
+.dsrm_button.dsrm_large {
+    height: 48px;
+    padding: 0 16px;
+}
+
+.dsrm_button.dsrm_core {
+    border-color: #00deb6;
+}
+
+.dsrm_button.dsrm_core.dsrm_secondary {
+    background-color: #fff;
+    color: #000433;
+}
+
+.PropertyList_propertyListControls__yc0xr .PropertyList_selectProperties__5GDp_  {
+    margin-left: auto;
+}
+
+.dsrm_button.dsrm_core:active,.dsrm_button.dsrm_core:hover {
+    border-color: #00f5c9;
+}
+
+.dsrm_button.dsrm_core.dsrm_secondary:active,.dsrm_button.dsrm_core.dsrm_secondary:hover {
+    background-color: #00f5c9;
+    color: #000433;
+}
+
+.dsrm_button.dsrm_core.dsrm_primary {
+    background-color: #00deb6;
+    color: #000433;
+}
+
+.PropertyList_addProperties__K1E_f  {
+    display: none;
+}
+
+@media (min-width: 48em){
+  .PropertyList_addProperties__K1E_f  {
+    display: inline-block;
+    margin-left: 16px;
+  }
+}
+
+.dsrm_button.dsrm_core.dsrm_primary:active,.dsrm_button.dsrm_core.dsrm_primary:hover {
+    background-color: #00f5c9;
+}
+
+.cui-interactive-property-list ul  {
+    list-style: none;
+    padding: 0;
+}
+
+h4 {
+    margin: unset;
+}
+
+.PropertyList_noMoreProperties__lBWaQ .PropertyList_noMorePropertiesTitleText__X99d_  {
+    font-size: 20px;
+    font-weight: 700;
+    margin-top: 10px;
+    text-align: center;
+}
+
+.PropertyList_noMoreProperties__lBWaQ .PropertyList_noMorePropertiesDescriptionText__Mg0Ah  {
+    font-size: 16px;
+    font-weight: 400;
+    margin-top: 10px;
+    margin-bottom: 25px;
+    text-align: center;
+}
+
+.PropertyList_propertyListControls__yc0xr .PropertyList_numberProperties__N5O8D .PropertyList_number__J7Ba5  {
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.dsrm_button__icon {
+    vertical-align: text-top;
+}
+
+.dsrm_button__icon--left {
+    margin-right: 8px;
+}
+
+[class^="ksc_"] {
+    box-sizing: border-box;
+}
+
+.ksc_icon {
+    fill: #262637;
+    height: 32px;
+    width: 32px;
+}
+
+svg:not(:root) {
+    overflow: hidden;
+}
+
+@media (min-width: 48em){
+  .PropertyList_addProperties__K1E_f svg  {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+[class^="ksc_"],[class^="ksc_"]:after,[class^="ksc_"]:before {
+    box-sizing: border-box;
+}
+
+.PropertyList_noMorePropertiesAddProperties__BGoGI svg  {
+    width: 16px;
+    height: 16px;
+}
+
+.rm-transition-fader {
+    visibility: visible;
+    opacity: 1;
+    transition: opacity .5s linear;
+}
+
+.cui-interactive-property-list li  {
+    list-style: none;
+}
+
+.cui-interactive-property-list .selectable-element  {
+    background: none;
+    color: inherit;
+    border: none;
+    padding: 0 2px;
+    font: inherit;
+    cursor: pointer;
+    outline: inherit;
+    width: 100%;
+    margin: 8px 0;
+    position: relative;
+    text-align: unset;
+}
+
+a {
+    -webkit-box-orient: vertical;
+    color: #11828d;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.cui-property-card {
+    position: relative;
+    font-family: Effra,sans-serif;
+    text-decoration: none;
+    color: #262637;
+    border: 1px solid #dfdfe1;
+    border-radius: 4px;
+    background-color: #fff;
+}
+
+.cui-property-card-L {
+    grid-template-columns: 666px 1fr min-content;
+}
+
+.cui-property-card-L {
+    display: grid;
+    grid-template-rows: 222px 1fr;
+    grid-template-areas: "img det det" "mre act sel";
+}
+
+.cui-interactive-property-list .selectable-element .selectable-state  {
+    display: none;
+}
+
+.cui-property-card .images  {
+    position: relative;
+    grid-area: img;
+    display: flex;
+    flex-direction: row;
+}
+
+.cui-property-card .details  {
+    grid-area: det;
+    margin: 8px 16px;
+}
+
+.cui-property-card .more-details  {
+    grid-area: mre;
+    background-color: #f4f4f5;
+    display: flex;
+    justify-content: space-between;
+    min-height: 70px;
+}
+
+.cui-property-card .actions  {
+    grid-area: act;
+    margin: 8px 16px;
+    justify-content: space-between;
+}
+
+.cui-property-card .actions  {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.cui-property-card .images img  {
+    max-height: 222px;
+    width: 100%;
+    max-width: 333px;
+    -o-object-fit: cover;
+    object-fit: cover;
+}
+
+.title-and-heart-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.cui-property-card .details .address  {
+    font-size: 14px;
+    line-height: 20px;
+    font-style: unset;
+}
+
+.cui-property-card .details .status  {
+    font-size: 14px;
+    line-height: 20px;
+    color: #0c8852;
+}
+
+.cui-property-card .details .description  {
+    font-size: 16px;
+    line-height: 24px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    max-height: 72px;
+}
+
+.cui-property-card .more-details .left  {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 16px;
+}
+
+.cui-property-card .actions .actions-controls  {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+h2 {
+    margin: unset;
+}
+
+.title {
+    font-size: 24px;
+    line-height: 32px;
+    color: #262637;
+    padding: 8px 0;
+    display: flex;
+    align-items: flex-start;
+}
+
+.title {
+    letter-spacing: .1px;
+    font-weight: 500;
+    margin: 0;
+}
+
+.cui-property-card .details .title  {
+    font-size: 20px;
+    line-height: 24px;
+    color: #11828d;
+    margin: 0;
+}
+
+.cui-property-card .more-details .price  {
+    font-size: 24px;
+    line-height: 28px;
+    margin: 0 0 8px;
+}
+
+.cui-property-card .actions .agent-logo  {
+    max-height: 50px;
+    display: flex;
+    justify-content: center;
+}
+
+.cui-property-card .actions address  {
+    font-style: normal;
+    padding: 0 12px;
+    border-right: 1px solid #dfdfe1;
+    margin-right: 2px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.cui-property-card .actions .add-edit-notes  {
+    display: flex;
+    align-items: center;
+    border: 0;
+    padding: 16px 2px;
+    cursor: pointer;
+    color: #262637;
+    margin: 0 24px;
+}
+
+.cui-property-card .actions .add-edit-notes:first-child  {
+    margin-left: 0;
+}
+
+.cui-property-card .actions .add-edit-notes:last-child  {
+    margin-right: 0;
+}
+
+.cui-property-card .more-details .sub-price  {
+    font-size: 14px;
+    line-height: 20px;
+    margin: 0;
+}
+
+.cui-property-card .actions .agent-logo img  {
+    max-width: 100%;
+    max-height: 100%;
+    display: block;
+}
+
+.cui-property-card .actions .agent-tele  {
+    margin: 0;
+}
+
+.cui-property-card .actions .agent-tele-label  {
+    margin: 0;
+    font-size: 14px;
+    line-height: 28px;
+    color: #262637;
+}
+
+.cui-property-card .actions .email-icon  {
+    width: 46px;
+    height: 46px;
+    padding: 9px;
+}
+
+.cui-property-card .actions .add-edit-notes-svg  {
+    display: block;
+    width: 22px;
+    height: 22px;
+    margin-top: -3px;
+    flex-shrink: 0;
+}
+
+.cui-property-card .actions .add-edit-notes-label  {
+    font-size: 14px;
+    line-height: 20px;
+    letter-spacing: .1px;
+    font-weight: 400;
+    margin-left: 8px;
+}
+
+.cui-property-card .actions .email-icon svg  {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+
+/* These were inline style tags. Uses id+class to override almost everything */
+#style-5OxV1.style-5OxV1 {
+   height: auto;
+    overflow: visible;
+}
+#style-d4G6c.style-d4G6c {
+   height: auto;
+    overflow: visible;
+}
+#style-Uow6G.style-Uow6G {
+   height: auto;
+    overflow: visible;
+}
+#style-veDUV.style-veDUV {
+   height: auto;
+    overflow: visible;
+}
+#style-ZtLeZ.style-ZtLeZ {
+   height: auto;
+    overflow: visible;
+}
+#style-MwV23.style-MwV23 {
+   height: auto;
+    overflow: visible;
+}
+#style-wBhor.style-wBhor {
+   height: auto;
+    overflow: visible;
+}
