@@ -12,47 +12,50 @@
         <div class="cui-interactive-property-list">
             <ul role="listbox">
                 {% for property in properties %}
-                    <div aria-hidden="false" class="rah-static rah-static--height-auto  style-5OxV1" id="style-5OxV1">
-                        <div>
-                            <div class="rm-transition-fader ">
-                                <li role="option" aria-selected="false">
-                                    <button id="property-{{ loop.index0 }}" class="selectable-element">
-                                        <a href="{{ property.link }}" tabindex="0" aria-disabled="false"
-                                           class="cui-property-card cui-property-card-L" target="_blank">
-                                            <div class="images">
-                                                {% for image in property.images %}
-                                                    <img src="{{ image.url }}" alt="{{ image.alt }}">
-                                                {% endfor %}
+                <div aria-hidden="false" class="rah-static rah-static--height-auto  style-5OxV1" id="style-5OxV1">
+                    <div>
+                        <div class="rm-transition-fader ">
+                            <li role="option" aria-selected="false">
+                                <button id="property-{{ loop.index0 }}" class="selectable-element">
+                                    <a href="{{ property.link }}" tabindex="0" aria-disabled="false"
+                                       class="cui-property-card cui-property-card-L" target="_blank">
+                                        <div class="images">
+                                            {% for image in property.images %}
+                                            <img src="{{ image.url }}" alt="{{ image.alt }}">
+                                            {% endfor %}
+                                        </div>
+                                        <div class="details details-L has-description ">
+                                            <div class="title-and-heart-wrapper">
+                                                <h2 class="title">
+                                                    {{ property.title }}
+                                                </h2>
                                             </div>
-                                            <div class="details details-L has-description ">
-                                                <div class="title-and-heart-wrapper">
-                                                    <h2 class="title">
-                                                        {{ property.title }}
-                                                    </h2>
-                                                </div>
-                                                <address class="address">
-                                                    {{ property.address }}
-                                                </address>
-                                                <p class="status">
-                                                    {{ property.status }}
+                                            <address class="address">
+                                                {{ property.address }}
+                                            </address>
+                                            <p class="status">
+                                                {{ property.travel_time }}
+                                            </p>
+                                            <p class="status">
+                                                {{ property.status }}
+                                            </p>
+                                            <p class="description">
+                                                {{ property.description }}
+                                            </p>
+                                        </div>
+                                        <div class="more-details">
+                                            <div class="left ">
+                                                <p class="price">
+                                                    {{ property.price }}
                                                 </p>
-                                                <p class="description">
-                                                    {{ property.description }}
-                                                </p>
                                             </div>
-                                            <div class="more-details">
-                                                <div class="left ">
-                                                    <p class="price">
-                                                        {{ property.price }}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </a>
-                                    </button>
-                                </li>
-                            </div>
+                                        </div>
+                                    </a>
+                                </button>
+                            </li>
                         </div>
                     </div>
+                </div>
                 {% endfor %}
             </ul>
         </div>

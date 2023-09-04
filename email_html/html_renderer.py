@@ -17,13 +17,21 @@ def index():
 
     properties = []
     for index, property in df.iterrows():
+
+        travel_time = ""
+        for time, value in property[["sub_35m", "sub_40m", "sub_45m"]].items():
+            if value:
+                travel_time = f"Less than {time.replace('sub_', '').replace('m', '')} minutes"
+                break
+
         data = {
             "link": f"https://www.rightmove.co.uk/properties/{property.property_id}",
             "title": property.property_description,
             "address": property.address,
             "status": f"Last update {property.last_update}",
             "description": property.summary,
-            "price": f"£{property.price_amount:,.0f}"
+            "price": f"£{property.price_amount:,.0f}",
+            "travel_time": travel_time
         }
 
         if type(property["images"]) == str:
