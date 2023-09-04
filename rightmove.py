@@ -14,15 +14,15 @@ class Rightmove:
 
     async def __aenter__(self):
         """
-		Asynchronous enter function which assigns the async httpx client
-		"""
+        Asynchronous enter function which assigns the async httpx client
+        """
         self.client = httpx.AsyncClient()
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """
-		Asynchronous exit function which closes the async httpx client
-		"""
+        Asynchronous exit function which closes the async httpx client
+        """
         await self.client.aclose()
 
     @lru_cache(maxsize=10)
@@ -52,7 +52,8 @@ class Rightmove:
                              radius: Optional[int] = 5,
                              sstc: Optional[bool] = False,
                              exclude: Optional[list] = None,
-                             include: Optional[list]= None) -> dict:
+                             include: Optional[list] = None
+                             ) -> dict:
         """
         Sends a request to the Rightmove servers to get the Property IDs which appear within the given
         map coordinates.
@@ -128,8 +129,8 @@ class Rightmove:
         if include:
             for item in include:
                 valid_inclusions = ["garden", "parking", "newHome", "retirement", "sharedOwnership", "auction"]
-                if item not in valid_inclusions:
-                    raise ValueError(f"Valid options for include are {valid_inclusions}, got: {item}")
+            if item not in valid_inclusions:
+                raise ValueError(f"Valid options for include are {valid_inclusions}, got: {item}")
             params["dontShow"] = ",".join(include)
 
         r = await self.client.get("https://www.rightmove.co.uk/api/_mapSearch", params=params)
@@ -142,12 +143,12 @@ class Rightmove:
 
     async def get_property_data(self, channel: str, ids: list[int], progress: tqdm = None) -> dict:
         """
-		Sends a request to the Rightmove API to get property data from each Property ID given.
+        Sends a request to the Rightmove API to get property data from each Property ID given.
         :param channel:     str RENT or BUY channel
-		:param ids:         List of integer Rightmove Property IDs
+        :param ids:         List of integer Rightmove Property IDs
         :param progress:    Optionally add progress bar object.
-		:return:            JSON response from the Rightmove API
-		"""
+        :return:            JSON response from the Rightmove API
+        """
 
         if type(channel) != str or channel.upper() not in ["BUY", "RENT"]:
             raise ValueError(f"Expected string value of either 'BUY'/'RENT' for channel, got: {channel}")

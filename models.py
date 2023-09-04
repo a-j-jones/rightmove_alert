@@ -1,8 +1,11 @@
 import datetime as dt
-from sqlmodel import Field, SQLModel
-from pydantic import validator, ValidationError
 from typing import Optional
-import re
+
+from pydantic import validator
+from sqlmodel import create_engine, Field, SQLModel
+
+sqlite_file_name = "database.db"
+sqlite_url = f"sqlite:///{sqlite_file_name}"
 
 
 class PropertyLocation(SQLModel, table=True):
@@ -29,7 +32,7 @@ class PropertyData(SQLModel, table=True):
     area: Optional[float]
     summary: str
     address: str
-    property_subtype: Optional[str|None]
+    property_subtype: Optional[str | None]
     property_description: str
     premium_listing: bool
     price_amount: float
@@ -61,3 +64,8 @@ class PropertyImages(SQLModel, table=True):
     property_id: int = Field(default=None, primary_key=True, foreign_key="propertydata.property_id")
     image_url: str = Field(default=None, primary_key=True)
     image_caption: Optional[str]
+
+
+if __name__ == "__main__":
+    engine = create_engine(sqlite_url, echo=False)
+    SQLModel.metadata.create_all(engine)
