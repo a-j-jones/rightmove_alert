@@ -1,14 +1,14 @@
 import asyncio
 
 from rightmove.database import RightmoveDatabase
-from rightmove.models import sqlite_file_name
+from rightmove.models import sqlite_url
 from rightmove.api_wrapper import Rightmove
 from rightmove.search_algorithm import RightmoveSearcher
 
 
 async def download_properties(channel):
     # Initialise objects
-    database = RightmoveDatabase(sqlite_file_name)
+    database = RightmoveDatabase(sqlite_url)
     async with Rightmove(database=database) as rightmove_api:
         searcher = RightmoveSearcher(rightmove_api=rightmove_api, database=database)
         task = searcher.get_all_properties(
@@ -35,7 +35,7 @@ async def download_properties(channel):
 
 async def download_property_data(update, cutoff=None):
     # Initialise objects
-    database = RightmoveDatabase(sqlite_file_name)
+    database = RightmoveDatabase(sqlite_url)
 
     async with Rightmove(database=database) as rightmove_api:
         searcher = RightmoveSearcher(rightmove_api=rightmove_api, database=database)

@@ -4,9 +4,10 @@ import numba
 import numpy as np
 import pandas as pd
 from numba import njit
-from sqlmodel import create_engine
+from sqlmodel import create_engine, Session
+from os import path
 
-from rightmove.models import sqlite_url
+from rightmove.models import sqlite_url, TravelTime
 
 
 @njit()
@@ -47,27 +48,44 @@ def get_shape(input_file):
     """
     Reads a geojson file and returns the coordinates of the polygon
     """
-    with open(input_file) as f:
+    parent_dir = path.dirname(path.dirname(__file__))
+    filepath = path.join(parent_dir, "shapes", input_file)
+
+    with open(filepath) as f:
         data = json.load(f)
 
     return data["results"][0]["shapes"]
 
 
-if __name__ == "__main__":
+def update_locations():
     engine = create_engine(sqlite_url, echo=False)
-    sql = "SELECT * FROM alert_properties"
+    sql = "SELECT * FROM alert_properties where not travel_reviewed"
     df = pd.read_sql(sql, engine)
+
+    if len(df) == 0:
+        return
+
     points = df[["latitude", "longitude"]].values
 
-    for file in ["35mins", "40mins", "45mins"]:
+    for file in ["sub_35m", "sub_40m", "sub_45m"]:
         result = np.zeros(len(points), dtype=bool)
-        for polygon_data in get_shape(f"shapes/{file}.json"):
+        for polygon_data in get_shape(f"{file}.json"):
             polygon = pd.DataFrame(polygon_data["shell"]).values
             result = np.logical_or(result, points_in_polygon_parallel(points, polygon))
 
         df[file] = result
 
-    df["gbp_per_sqft"] = df["price_amount"] / df["area"]
-    df["last_update"] = pd.to_datetime(df.last_update).dt.date
-    df = df.sort_values("gbp_per_sqft")
-    df[df["40mins"]].to_csv("40mins.csv", index=False)
+    df = df[['property_id', 'sub_35m', 'sub_40m', 'sub_45m']]
+
+    engine = create_engine(sqlite_url, echo=False)
+    with Session(engine) as session:
+        for index, row in df.iterrows():
+            session.add(TravelTime(
+                **row.to_dict()
+            ))
+
+        session.commit()
+
+
+if __name__ == "__main__":
+    update_locations()

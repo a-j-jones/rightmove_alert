@@ -3,9 +3,11 @@ from typing import Optional
 
 from pydantic import validator
 from sqlmodel import create_engine, Field, SQLModel
+from os import path
 
 sqlite_file_name = "database.db"
-sqlite_url = f"sqlite:///{sqlite_file_name}"
+absolute_sqlite_file_path = path.join(path.dirname(__file__), sqlite_file_name)
+sqlite_url = f"sqlite:///{absolute_sqlite_file_path}"
 
 
 class PropertyLocation(SQLModel, table=True):
@@ -67,7 +69,23 @@ class PropertyImages(SQLModel, table=True):
     image_caption: Optional[str]
 
 
+class ReviewedProperties(SQLModel, table=True):
+    """
+    Model to store properties that have already been considered / emailed to the customer
+    """
+    property_id: int = Field(default=None, primary_key=True, foreign_key="propertydata.property_id")
+    reviewed_date: dt.datetime = Field(default=dt.datetime.now())
+    emailed: bool = Field(default=False)
+
+
+class TravelTime(SQLModel, table=True):
+    property_id: int = Field(default=None, primary_key=True, foreign_key="propertydata.property_id")
+    sub_35m: bool = Field(default=False)
+    sub_40m: bool = Field(default=False)
+    sub_45m: bool = Field(default=False)
+
+
 if __name__ == "__main__":
     engine = create_engine(sqlite_url, echo=False)
-    SQLModel.metadata.drop_all(engine)
+    # SQLModel.metadata.drop_all(engine)
     SQLModel.metadata.create_all(engine)

@@ -9,10 +9,8 @@ from rightmove.models import PropertyData, PropertyImages, PropertyLocation
 
 
 class RightmoveDatabase:
-    def __init__(self, sqlite_file_name):
-        self.sqlite_file_name = sqlite_file_name
-        self.sqlite_url = f"sqlite:///{self.sqlite_file_name}"
-        self.engine = create_engine(self.sqlite_url, echo=False)
+    def __init__(self, sqlite_url):
+        self.engine = create_engine(sqlite_url, echo=False)
 
     def get_id_len(self, update, channel, update_cutoff=None):
         """
