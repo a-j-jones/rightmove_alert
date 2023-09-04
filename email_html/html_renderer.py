@@ -4,7 +4,6 @@ import pandas as pd
 from flask import Flask, render_template
 from sqlmodel import create_engine, Session
 
-from rightmove.geolocation import update_locations
 from rightmove.models import ReviewedProperties, sqlite_url
 
 app = Flask(__name__)
@@ -38,7 +37,7 @@ def index():
     return render_template('template.html', properties=properties, style="static/styles.css")
 
 
-def main():
+def run_app():
     engine = create_engine(sqlite_url, echo=False)
     property_ids = pd.read_sql("SELECT property_id FROM alert_properties where not property_reviewed", engine)
 
@@ -49,9 +48,4 @@ def main():
 
         session.commit()
 
-    app.run(debug=True)
-
-
-if __name__ == '__main__':
-    update_locations()
-    main()
+    app.run(debug=False)

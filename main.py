@@ -5,6 +5,9 @@ from rightmove.models import sqlite_url
 from rightmove.api_wrapper import Rightmove
 from rightmove.search_algorithm import RightmoveSearcher
 
+from rightmove.geolocation import update_locations
+from email_html.html_renderer import run_app
+
 
 async def download_properties(channel):
     # Initialise objects
@@ -53,5 +56,13 @@ async def download_property_data(update, cutoff=None):
 
 
 if __name__ == "__main__":
+
+    # Download and update properties:
     asyncio.run(download_properties("BUY"))
     asyncio.run(download_property_data(update=False))
+
+    # Check locations against travel time shape file:
+    update_locations()
+
+    # Display properties:
+    run_app()
