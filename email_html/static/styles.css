@@ -1,12 +1,13 @@
 @font-face {
     font-family: Effra;
-    src: url(https://media.rightmove.co.uk/assets/shared-fonts/effra/Effra_WLatn_Md.woff2)format("woff2"),url(https://media.qa.rightmove.com/assets/shared-fonts/effra/Effra_WLatn_Md.woff2)format("woff2");
     font-style: normal;
     font-weight: 500
 }
 
 @font-face {
-    font-family:Effra;src:url(https://media.rightmove.co.uk/assets/shared-fonts/effra/Effra_WLatn_Rg.woff2)format("woff2"),url(https://media.qa.rightmove.com/assets/shared-fonts/effra/Effra_WLatn_Rg.woff2)format("woff2");font-style:normal;font-weight:400
+    font-family:Effra;
+    font-style:normal;
+    font-weight:400
 }
 
 body,html {
@@ -134,7 +135,8 @@ a {
     position: relative;
     grid-area: img;
     display: flex;
-    flex-direction: row
+    flex-direction: row;
+    overflow: hidden; /* hide overflowing images */
 }
 
 .cui-property-card .details {
@@ -158,9 +160,8 @@ a {
 
 .cui-property-card .images img {
     max-height: 222px;
-    width: 100%;
-    max-width: 333px;
-    object-fit: cover
+    flex: 0 1 333px;  /* do not grow, shrink if necessary, base width is 333px */
+    object-fit: cover;
 }
 
 .cui-property-card .actions,.cui-property-card .actions .actions-controls,.cui-property-card .actions .add-edit-notes,.cui-property-card .actions .agent-logo,.cui-property-card .more-details .left,.title-and-heart-wrapper {
