@@ -1,4 +1,4 @@
-# Rightmove API v2
+# Rightmove API
 
 ## Description
 
