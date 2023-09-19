@@ -1,17 +1,21 @@
 import json
+from os import path
+from pathlib import Path
 
 import numba
 import numpy as np
 import pandas as pd
 from numba import njit
 from sqlmodel import create_engine, Session
-from os import path
 
-from rightmove.models import sqlite_url, TravelTime
+from rightmove.models import sqlite_url, TravelTimePrecise
 
 
 @njit()
 def point_in_polygon(x, y, polygon):
+    """
+    Checks if a point is inside a polygon
+    """
     n = len(polygon)
     inside = False
     p2x = 0.0
@@ -44,20 +48,21 @@ def points_in_polygon_parallel(points, polygon):
     return D
 
 
-def get_shape(input_file):
+def get_shape(filepath):
     """
     Reads a geojson file and returns the coordinates of the polygon
     """
-    parent_dir = path.dirname(path.dirname(__file__))
-    filepath = path.join(parent_dir, "shapes", input_file)
 
     with open(filepath) as f:
         data = json.load(f)
 
-    return data["results"][0]["shapes"]
+    return data["shapes"]
 
 
 def update_locations():
+    """
+    Updates the locations with the travel time data
+    """
     engine = create_engine(sqlite_url, echo=False)
     sql = "SELECT * FROM alert_properties where not travel_reviewed"
     df = pd.read_sql(sql, engine)
@@ -67,22 +72,39 @@ def update_locations():
 
     points = df[["latitude", "longitude"]].values
 
-    for file in ["sub_35m", "sub_40m", "sub_45m"]:
+    keep_cols = []
+    parent_dir = Path(path.dirname(path.dirname(__file__)))
+    files = sorted(list(parent_dir.glob("shapes/*.json")))
+    for file in files:
         result = np.zeros(len(points), dtype=bool)
-        for polygon_data in get_shape(f"{file}.json"):
+        for polygon_data in get_shape(file):
             polygon = pd.DataFrame(polygon_data["shell"]).values
             result = np.logical_or(result, points_in_polygon_parallel(points, polygon))
+            for hole in polygon_data["holes"]:
+                polygon = pd.DataFrame(hole).values
+                result = np.logical_and(result, ~points_in_polygon_parallel(points, polygon))
 
-        df[file] = result
+        col = int(file.stem.replace("sub_", "").replace("m", ""))
+        keep_cols.append(col)
+        df[col] = result
+        df[int(file.stem.replace("sub_", "").replace("m", ""))] = result
 
-    df = df[['property_id', 'sub_35m', 'sub_40m', 'sub_45m']]
+    df = (df
+          .melt(id_vars=["property_id"], value_vars=keep_cols, var_name="travel_time", value_name="in_polygon")
+          .query("in_polygon == True")
+          .groupby("property_id")
+          .agg({"travel_time": "min"})
+          .reset_index()
+          )
 
     engine = create_engine(sqlite_url, echo=False)
     with Session(engine) as session:
         for index, row in df.iterrows():
-            session.add(TravelTime(
-                **row.to_dict()
-            ))
+            session.merge(
+                TravelTimePrecise(
+                    **row.to_dict()
+                )
+            )
 
         session.commit()
 

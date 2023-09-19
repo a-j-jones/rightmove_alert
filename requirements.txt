@@ -6,3 +6,4 @@ sqlmodel
 tqdm
 numba
 flask
+traveltimepy

@@ -13,16 +13,12 @@ app = Flask(__name__)
 def index():
     # Reading data from CSV
     engine = create_engine(sqlite_url, echo=False)
-    df = pd.read_sql("SELECT * FROM alert_properties where sub_45m and latest_reviewed", engine)
+    df = pd.read_sql("SELECT * FROM alert_properties where travel_time < 45 and latest_reviewed", engine)
 
     properties = []
     for index, property in df.iterrows():
 
-        travel_time = ""
-        for time, value in property[["sub_35m", "sub_40m", "sub_45m"]].items():
-            if value:
-                travel_time = f"Less than {time.replace('sub_', '').replace('m', '')} minutes"
-                break
+        travel_time = f"About {property.travel_time} minutes"
 
         data = {
             "link": f"https://www.rightmove.co.uk/properties/{property.property_id}",
@@ -57,3 +53,7 @@ def run_app():
         session.commit()
 
     app.run(debug=False)
+
+
+if __name__ == '__main__':
+    run_app()
