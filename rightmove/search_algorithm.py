@@ -5,8 +5,8 @@ from typing import Optional
 import numpy as np
 from tqdm.asyncio import tqdm
 
-from database import RightmoveDatabase
-from rightmove import Rightmove
+from rightmove.database import RightmoveDatabase
+from rightmove.api_wrapper import Rightmove
 
 
 class RightmoveSearcher:
@@ -28,7 +28,9 @@ class RightmoveSearcher:
                                  index: Optional[int] = 0,
                                  radius: Optional[int] = 5,
                                  sstc: Optional[bool] = False,
-                                 exclude: Optional[list] = None) -> bool:
+                                 exclude: Optional[list] = None,
+                                 include: Optional[list] = None
+                                 ) -> bool:
         """
         Interacts with the rightmove.Rightmove API wrapper to perform a grid search of an entire area, finding
         every possible property on the website within given coordinates and region search term.
@@ -50,10 +52,7 @@ class RightmoveSearcher:
         :param radius:          int     (default=5)     Search radius in miles
         :param sstc:            bool    (default=False) Sold Subject to Contracts (include True or False)
         :param exclude:         list    (default=None)  List of options to exclude
-                                                        Valid options are:
-                                                            - newHome
-                                                            - retirement
-                                                            - sharedOwnership
+        :param include:         list    (default=None)  List of options to include
         """
 
         api_args = dict(locals())
@@ -77,7 +76,9 @@ class RightmoveSearcher:
                                           index: Optional[int] = 0,
                                           radius: Optional[int] = 5,
                                           sstc: Optional[bool] = False,
-                                          exclude: Optional[list] = None) -> bool:
+                                          exclude: Optional[list] = None,
+                                          include: Optional[list] = None
+                                          ) -> bool:
         """
         See documentation for get_all_properties()
         """
@@ -121,7 +122,8 @@ class RightmoveSearcher:
     def get_viewport_size(lat1: float,
                           lat2: float,
                           lon1: float,
-                          lon2: float) -> float:
+                          lon2: float
+                          ) -> float:
         """
         Takes the viewport parameters (two sets of longitude and latitude) and returns the size of the rectangle
         :param lat1:            float   1st Latitude value
@@ -139,7 +141,8 @@ class RightmoveSearcher:
     def get_new_viewports(lat1: float,
                           lat2: float,
                           lon1: float,
-                          lon2: float) -> list[dict, dict]:
+                          lon2: float
+                          ) -> list[dict, dict]:
         """
         Takes a viewport and divides it into two equal viewports which can then be used to narrow the search
         for properties.

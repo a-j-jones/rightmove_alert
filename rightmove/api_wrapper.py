@@ -51,7 +51,9 @@ class Rightmove:
                              index: Optional[int] = 0,
                              radius: Optional[int] = 5,
                              sstc: Optional[bool] = False,
-                             exclude: Optional[list] = None) -> dict:
+                             exclude: Optional[list] = None,
+                             include: Optional[list] = None
+                             ) -> dict:
         """
         Sends a request to the Rightmove servers to get the Property IDs which appear within the given
         map coordinates.
@@ -124,6 +126,13 @@ class Rightmove:
                     raise ValueError(f"Valid options for exclude are {valid_exclusions}, got: {item}")
             params["dontShow"] = ",".join(exclude)
 
+        if include:
+            for item in include:
+                valid_inclusions = ["garden", "parking", "newHome", "retirement", "sharedOwnership", "auction"]
+            if item not in valid_inclusions:
+                raise ValueError(f"Valid options for include are {valid_inclusions}, got: {item}")
+            params["dontShow"] = ",".join(include)
+
         r = await self.client.get("https://www.rightmove.co.uk/api/_mapSearch", params=params)
         data = r.json()
 
@@ -152,7 +161,7 @@ class Rightmove:
         r = await self.client.get("https://www.rightmove.co.uk/api/_searchByIds", params=params)
 
         try:
-            data = r.json()
+            data = r.json()["properties"]
             self.database.load_property_data(data, ids)
         except JSONDecodeError:
             data = None

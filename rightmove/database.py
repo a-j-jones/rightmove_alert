@@ -1,17 +1,16 @@
 import datetime as dt
+import re
 from typing import List
 
 import pandas as pd
-from sqlmodel import create_engine, Session, select, func, distinct, or_
+from sqlmodel import create_engine, distinct, func, or_, select, Session
 
-from models import Property_Location, Property_Data
+from rightmove.models import PropertyData, PropertyImages, PropertyLocation
 
 
 class RightmoveDatabase:
-    def __init__(self, sqlite_file_name):
-        self.sqlite_file_name = sqlite_file_name
-        self.sqlite_url = f"sqlite:///{self.sqlite_file_name}"
-        self.engine = create_engine(self.sqlite_url, echo=False)
+    def __init__(self, sqlite_url):
+        self.engine = create_engine(sqlite_url, echo=False)
 
     def get_id_len(self, update, channel, update_cutoff=None):
         """
@@ -25,17 +24,16 @@ class RightmoveDatabase:
         """
         with Session(self.engine) as session:
             current_time = dt.datetime.now()
-            statement = (select(func.count(distinct(Property_Location.property_id))).join(Property_Data, isouter=True)
-                         .where(Property_Location.property_channel == channel))
+            statement = (select(func.count(distinct(PropertyLocation.property_id))).join(PropertyData, isouter=True)
+                         .where(PropertyLocation.property_channel == channel))
             if update:
                 if update_cutoff:
                     statement = (statement
-                                 .where(
-                        or_(Property_Data.last_update < update_cutoff, Property_Data.last_update == None))
-                                 .where(Property_Data.property_validto >= current_time)
+                                 .where(or_(PropertyData.last_update < update_cutoff, PropertyData.last_update == None))
+                                 .where(PropertyData.property_validto >= current_time)
                                  )
             else:
-                statement = statement.where(Property_Data.property_id == None)
+                statement = statement.where(PropertyData.property_id == None)
 
             results = session.exec(statement)
             return results.first()
@@ -53,17 +51,16 @@ class RightmoveDatabase:
         """
         with Session(self.engine) as session:
             current_time = dt.datetime.now()
-            statement = (select(Property_Location.property_id).join(Property_Data, isouter=True)
-                         .where(Property_Location.property_channel == channel))
+            statement = (select(PropertyLocation.property_id).join(PropertyData, isouter=True)
+                         .where(PropertyLocation.property_channel == channel))
             if update:
                 if update_cutoff:
                     statement = (statement
-                                 .where(
-                        or_(Property_Data.last_update < update_cutoff, Property_Data.last_update == None))
-                                 .where(Property_Data.property_validto >= current_time)
+                                 .where(or_(PropertyData.last_update < update_cutoff, PropertyData.last_update == None))
+                                 .where(PropertyData.property_validto >= current_time)
                                  )
             else:
-                statement = statement.where(Property_Data.property_id == None)
+                statement = statement.where(PropertyData.property_id == None)
 
             results = session.exec(statement)
             ids = []
@@ -84,8 +81,8 @@ class RightmoveDatabase:
         with Session(self.engine) as session:
             properties = data["properties"]
             for property_data in properties:
-                if not session.get(Property_Location, property_data["id"]):
-                    p = Property_Location(
+                if not session.get(PropertyLocation, property_data["id"]):
+                    p = PropertyLocation(
                         property_id=property_data["id"],
                         property_asatdt=dt.datetime.now(),
                         property_channel=channel.upper(),
@@ -105,11 +102,14 @@ class RightmoveDatabase:
         with Session(self.engine) as session:
             found_ids = [p["id"] for p in data]
             for id in ids:
+
+                # Check each ID which was searched for, if there was no information return then we assume that
+                # the property has been removed from the Rightmove website, and end the property's validto variable.
                 if id not in found_ids:
                     current_time = dt.datetime.now()
-                    statement = (select(Property_Data)
-                                 .where(Property_Data.property_id == id)
-                                 .where(Property_Data.property_validto >= dt.datetime.now())
+                    statement = (select(PropertyData)
+                                 .where(PropertyData.property_id == id)
+                                 .where(PropertyData.property_validto >= dt.datetime.now())
                                  )
                     results = session.exec(statement)
                     existing_record = results.first()
@@ -118,20 +118,39 @@ class RightmoveDatabase:
                         session.add(existing_record)
                         session.commit()
 
+            # Loop through each property which was returned by the request:
             for prop in data:
+
+                # Check for an existing record which is currently valid:
                 current_time = dt.datetime.now()
-                statement = (select(Property_Data)
-                             .where(Property_Data.property_id == prop["id"])
-                             .where(Property_Data.property_validto >= dt.datetime.now())
+                statement = (select(PropertyData)
+                             .where(PropertyData.property_id == prop["id"])
+                             .where(PropertyData.property_validto >= dt.datetime.now())
                              )
                 results = session.exec(statement)
                 existing_record = results.first()
 
-                p = Property_Data(
+                # Parse the Area of the property:
+                area_str = prop.get("displaySize")
+                if "sq" in area_str:
+                    area = float(re.match(r"\d{1,3}(,\d{3})*(\.\d+)?", area_str).group(0).replace(",", ""))
+                else:
+                    area = None
+
+                # Get the 'display update date':
+                try:
+                    added_or_reduced = pd.to_datetime(prop.get("addedOrReduced").split(" ")[-1], dayfirst=True)
+                    if str(added_or_reduced) == "NaT":
+                        added_or_reduced = None
+                except Exception:
+                    added_or_reduced = None
+
+                p = PropertyData(
                     property_id=prop["id"],
                     property_validfrom=current_time,
                     bedrooms=prop["bedrooms"],
                     bathrooms=prop.get("bathrooms"),
+                    area=area,
                     summary=prop["summary"],
                     address=prop["displayAddress"],
                     property_subtype=prop["propertySubType"],
@@ -148,9 +167,32 @@ class RightmoveDatabase:
                     students=prop["students"],
                     auction=prop["auction"],
                     last_update=current_time,
-                    first_visible=pd.to_datetime(prop["firstVisibleDate"])
+                    first_visible=pd.to_datetime(prop["firstVisibleDate"]),
+                    last_displayed_update=added_or_reduced
                 )
 
+                # Otherwise we need to check if there are any changes to the data, if so we will mark the latest
+                # record as no longer valid, and create a new record which is valid from the current moment.
+                for img_data in prop["propertyImages"]["images"]:
+                    property_id = prop["id"]
+                    image_url = img_data["srcUrl"]
+                    statement = (select(PropertyImages)
+                                 .where(PropertyImages.property_id == property_id)
+                                 .where(PropertyImages.image_url == image_url)
+                                 )
+                    results = session.exec(statement)
+                    existing_image = results.first()
+
+                    if not existing_image:
+                        img = PropertyImages(
+                            property_id=property_id,
+                            image_caption=img_data["caption"],
+                            image_url=image_url
+                        )
+                        session.add(img)
+
+                # If an existing record was not found we can add it the DB transaction and move to the next
+                # property.
                 lookup = p.dict()
                 if not existing_record:
                     session.add(p)
