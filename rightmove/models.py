@@ -1,9 +1,9 @@
 import datetime as dt
+from os import path
 from typing import Optional
 
 from pydantic import validator
 from sqlmodel import create_engine, Field, SQLModel
-from os import path
 
 sqlite_file_name = "database.db"
 absolute_sqlite_file_path = path.join(path.dirname(__file__), sqlite_file_name)
@@ -83,6 +83,11 @@ class TravelTime(SQLModel, table=True):
     sub_35m: bool = Field(default=False)
     sub_40m: bool = Field(default=False)
     sub_45m: bool = Field(default=False)
+
+
+class TravelTimePrecise(SQLModel, table=True):
+    property_id: int = Field(default=None, primary_key=True, foreign_key="propertydata.property_id")
+    travel_time: int = Field(default=None)
 
 
 if __name__ == "__main__":
