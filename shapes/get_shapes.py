@@ -10,7 +10,9 @@ LAT = 51.5038879
 LON = -0.0182073
 ARRIVAL_TIME = dt.datetime(2023, 9, 25, 7, 30, 0)
 
-sdk = TravelTimeSdk("4173bea0", "b256925da6ea61e020bea32f8753db0f")
+with open("secrets.json", "r") as f:
+    secrets = json.load(f)
+    sdk = TravelTimeSdk(**secrets)
 
 
 async def get_results(minutes: int) -> Tuple[int, TimeMapResult]:
@@ -32,7 +34,7 @@ async def main():
     This example shows how to use the SDK asynchronously.
     """
 
-    results = await asyncio.gather(*[get_results(m) for m in range(10, 51, 1)])
+    results = await asyncio.gather(*[get_results(m) for m in range(1, 5, 1)])
 
     for minutes, result in results:
         with open(f"sub_{minutes}m.json", "w") as f:
