@@ -74,7 +74,7 @@ def update_locations():
 
     keep_cols = []
     parent_dir = Path(path.dirname(path.dirname(__file__)))
-    files = sorted(list(parent_dir.glob("shapes/*.json")))
+    files = sorted(list(parent_dir.glob("shapes/sub_*.json")))
     for file in files:
         result = np.zeros(len(points), dtype=bool)
         for polygon_data in get_shape(file):
