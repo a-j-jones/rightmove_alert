@@ -78,6 +78,15 @@ class ReviewedProperties(SQLModel, table=True):
     emailed: bool = Field(default=False)
 
 
+class ReviewDates(SQLModel, table=True):
+    """
+    Model to store properties that have already been considered / emailed to the customer
+    """
+    reviewed_date: dt.datetime = Field(default=dt.datetime.now(), primary_key=True, foreign_key="reviewedproperties.reviewed_date")
+    email_id: int = Field(default=None)
+    str_date: Optional[str] = Field(default=None)
+
+
 class TravelTime(SQLModel, table=True):
     property_id: int = Field(default=None, primary_key=True, foreign_key="propertydata.property_id")
     sub_35m: bool = Field(default=False)

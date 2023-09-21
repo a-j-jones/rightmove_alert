@@ -6,7 +6,7 @@ from rightmove.api_wrapper import Rightmove
 from rightmove.search_algorithm import RightmoveSearcher
 
 from rightmove.geolocation import update_locations
-from email_html.html_renderer import run_app
+from email_html.html_renderer import app
 
 
 async def download_properties(channel):
@@ -65,4 +65,4 @@ if __name__ == "__main__":
     update_locations()
 
     # Display properties:
-    run_app()
+    app.run(debug=False)

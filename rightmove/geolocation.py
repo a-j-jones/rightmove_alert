@@ -89,9 +89,9 @@ def update_locations():
         df[col] = result
         df[int(file.stem.replace("sub_", "").replace("m", ""))] = result
 
+    df = df.melt(id_vars=["property_id"], value_vars=keep_cols, var_name="travel_time", value_name="in_polygon")
+    df["travel_time"] = df.travel_time.where(df.in_polygon, 999)
     df = (df
-          .melt(id_vars=["property_id"], value_vars=keep_cols, var_name="travel_time", value_name="in_polygon")
-          .query("in_polygon == True")
           .groupby("property_id")
           .agg({"travel_time": "min"})
           .reset_index()
@@ -100,11 +100,8 @@ def update_locations():
     engine = create_engine(sqlite_url, echo=False)
     with Session(engine) as session:
         for index, row in df.iterrows():
-            session.merge(
-                TravelTimePrecise(
-                    **row.to_dict()
-                )
-            )
+            ttp = TravelTimePrecise(**row.to_dict())
+            session.add(ttp)
 
         session.commit()
 
