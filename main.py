@@ -58,11 +58,13 @@ async def download_property_data(update, cutoff=None):
 if __name__ == "__main__":
 
     # Download and update properties:
-    # asyncio.run(download_properties("BUY"))
-    # asyncio.run(download_property_data(update=False))
+    download = input("Download new properties? (y/n): ")
+    if download.lower() == "y":
+        asyncio.run(download_properties("BUY"))
+        asyncio.run(download_property_data(update=False))
 
-    # Check locations against travel time shape file:
-    update_locations()
+        # Check locations against travel time shape file:
+        update_locations()
 
     # Display properties:
     app.run(debug=False)
