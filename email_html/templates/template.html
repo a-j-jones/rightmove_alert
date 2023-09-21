@@ -1,12 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% extends "base.html" %}
+{% block head %}
     <link rel="stylesheet" href="static/styles.css">
-    <title>Properties</title>
-</head>
-<body>
+{% endblock %}
+{% block content %}
 <div class="PropertyList_bottomPageContainer__1IVdm snipcss-mPJhA">
     <div class="fade-in-appear-done fade-in-enter-done">
         {% if review_id == 'latest' %}
@@ -66,5 +62,4 @@
         </div>
     </div>
 </div>
-</body>
-</html>
+{% endblock %}

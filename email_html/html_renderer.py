@@ -1,15 +1,17 @@
+import asyncio
 import datetime as dt
+import logging
 
 import pandas as pd
 import waitress
 from flask import Flask, redirect, render_template, request, url_for
-from sqlmodel import create_engine, select, Session
+from sqlmodel import create_engine, Session
 
+from rightmove.geolocation import update_locations
 from rightmove.models import ReviewDates, ReviewedProperties, sqlite_url
+from rightmove.run import download_properties, download_property_data
 
 app = Flask(__name__)
-
-import logging
 
 logger = logging.getLogger('waitress')
 logger.setLevel(logging.INFO)
@@ -17,32 +19,34 @@ logger.setLevel(logging.INFO)
 
 @app.route('/')
 def index():
-    logger.info("Hello")
     engine = create_engine(sqlite_url, echo=False)
-    with Session(engine) as session:
-        items = list(session.exec(select(ReviewDates).order_by(ReviewDates.email_id.desc())))
 
-    return render_template('index.html', items=items)
+    # Get review dates:
+    sql = "select distinct email_id, str_date from reviewdates order by email_id desc"
+    items = pd.read_sql(sql, engine).to_records()
 
+    # Get count of new properties:
+    sql = "select count(*) from alert_properties where travel_time < 45 and review_id is null"
+    count_props = pd.read_sql(sql, engine).values[0][0]
 
-@app.route('/review')
-def review():
-    engine = create_engine(sqlite_url, echo=False)
-    sql = f"""
-     select * from alert_properties
-     where 
-         travel_time < 45
-         and review_id is null
-     """
+    new_properties = ""
+    if count_props > 0:
+        new_properties = f" - {count_props} new"
+
+    logger.info(f"New properties: {count_props}")
+
+    return render_template('index.html', title="Home", items=items, new_properties=new_properties)
 
 
 @app.route('/email_template', methods=["GET"])
 def email_template():
     data = request.args.to_dict()
     review_id = data.get("id")
+    include_nav = False
     match review_id:
         case None:
             review_filter = "latest_reviewed"
+            include_nav = True
         case "latest":
             review_filter = "review_id is null"
         case _:
@@ -82,7 +86,7 @@ def email_template():
 
         properties.append(data)
 
-    return render_template('template.html', properties=properties, review_id=review_id)
+    return render_template('template.html', title="View properties", properties=properties, review_id=review_id, include_nav=include_nav)
 
 
 @app.route('/review_latest')
@@ -110,7 +114,18 @@ def review_latest():
     return redirect(url_for('index'))
 
 
+@app.route('/download')
+def download():
+    asyncio.run(download_properties("BUY"))
+    asyncio.run(download_property_data(update=False))
+    update_locations()
+
+    return redirect(url_for('index'))
+
+
 if __name__ == '__main__':
     port = 5000
     host = '127.0.0.1'
+
+    logger.info("Starting server...")
     waitress.serve(app, port=port, host=host)
