@@ -1,6 +1,7 @@
 import datetime as dt
 
 import pandas as pd
+import waitress
 from flask import Flask, redirect, render_template, request, url_for
 from sqlmodel import create_engine, select, Session
 
@@ -8,12 +9,18 @@ from rightmove.models import ReviewDates, ReviewedProperties, sqlite_url
 
 app = Flask(__name__)
 
+import logging
+
+logger = logging.getLogger('waitress')
+logger.setLevel(logging.INFO)
+
 
 @app.route('/')
 def index():
+    logger.info("Hello")
     engine = create_engine(sqlite_url, echo=False)
     with Session(engine) as session:
-        items = list(session.exec(select(ReviewDates)))
+        items = list(session.exec(select(ReviewDates).order_by(ReviewDates.email_id.desc())))
 
     return render_template('index.html', items=items)
 
@@ -87,11 +94,13 @@ def review_latest():
     with Session(engine) as session:
         review_date = dt.datetime.now()
         if len(property_ids) > 0:
-            session.add(ReviewDates(
-                email_id=review_id,
-                reviewed_date=review_date,
-                str_date=review_date.strftime("%d-%b-%Y")
-            ))
+            session.add(
+                ReviewDates(
+                    email_id=review_id,
+                    reviewed_date=review_date,
+                    str_date=review_date.strftime("%d-%b-%Y")
+                )
+            )
 
         for id in property_ids.property_id.unique():
             session.add(ReviewedProperties(property_id=id, reviewed_date=review_date, emailed=False))
@@ -102,4 +111,6 @@ def review_latest():
 
 
 if __name__ == '__main__':
-    app.run(debug=False)
+    port = 5000
+    host = '127.0.0.1'
+    waitress.serve(app, port=port, host=host)
