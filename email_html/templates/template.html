@@ -1,65 +1,39 @@
 {% extends "base.html" %}
-{% block head %}
-    <link rel="stylesheet" href="static/styles.css">
-{% endblock %}
-{% block content %}
-<div class="PropertyList_bottomPageContainer__1IVdm snipcss-mPJhA">
-    <div class="fade-in-appear-done fade-in-enter-done">
+{% block navbar_right %}
+    <div class="d-flex">
         {% if review_id == 'latest' %}
-            <div>
-                <a href="{{ url_for('review_latest') }}">Mark as reviewed</a>
-            </div>
+            <a class="btn btn-primary fw-semibold" href="{{ url_for('review_latest') }}" role="button">Mark reviewed</a>
+        {% else %}
+            <a class="btn btn-primary fw-semibold" href="{{ url_for('send', id=review_id) }}" role="button">Send email</a>
         {% endif %}
-        <div class="cui-interactive-property-list">
-            <ul role="listbox">
-                {% for property in properties %}
-                <div aria-hidden="false" class="rah-static rah-static--height-auto style-5OxV1" id="style-5OxV1">
-                    <div>
-                        <div class="rm-transition-fader ">
-                            <li role="option" aria-selected="false">
-                                <button id="property-{{ loop.index0 }}" class="selectable-element">
-                                    <a href="{{ property.link }}" tabindex="0" aria-disabled="false"
-                                       class="cui-property-card cui-property-card-L" target="_blank">
-                                        <div class="images">
-                                            {% for image in property.images %}
-                                            <img src="{{ image.url }}" alt="{{ image.alt }}">
-                                            {% endfor %}
-                                        </div>
-                                        <div class="details details-L has-description ">
-                                            <div class="title-and-heart-wrapper">
-                                                <h2 class="title">
-                                                    {{ property.title }}
-                                                </h2>
-                                            </div>
-                                            <address class="address">
-                                                {{ property.address }}
-                                            </address>
-                                            <p class="status">
-                                                {{ property.travel_time }}
-                                            </p>
-                                            <p class="status">
-                                                {{ property.status }}
-                                            </p>
-                                            <p class="description">
-                                                {{ property.description }}
-                                            </p>
-                                        </div>
-                                        <div class="more-details">
-                                            <div class="left ">
-                                                <p class="price">
-                                                    {{ property.price }}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </a>
-                                </button>
-                            </li>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </ul>
-        </div>
     </div>
-</div>
+{% endblock %}
+
+{% block content %}
+    {% for property in properties %}
+        <div class="card my-3 p-2">
+            <div class="card-body">
+                <div class="row">
+                    {% for image in property.images %}
+                        <div class="col px-2">
+                            <a href="{{ property.link }}"><img class="rounded img-fluid" src="{{ image.url }}"
+                                                               alt="property_image"></a>
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="row">
+                    <div class="col-9">
+                        <a class="text-decoration-none" href="{{ property.link }}">
+                            <h1 class="h4 text-primary mt-3 ">{{ property.title }}</h1>
+                        </a>
+                    </div>
+                    <div class="col-3"><p class="h4 text-end mt-3">{{ property.price }}</p></div>
+                </div>
+                <p class="mb-0">{{ property.address }}</p>
+                <p class="mb-0 text-secondary">{{ property.travel_time }}</p>
+                <p class="mb-0 text-secondary">{{ property.status }}</p>
+                <p class="mb-0">{{ property.description }}</p>
+            </div>
+        </div>
+    {% endfor %}
 {% endblock %}

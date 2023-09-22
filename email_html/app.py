@@ -10,10 +10,10 @@ import waitress
 from flask import Flask, redirect, render_template, request, url_for
 from sqlmodel import create_engine, Session
 
+from email_html.send_email import send_email
 from rightmove.geolocation import update_locations
 from rightmove.models import ReviewDates, ReviewedProperties, sqlite_url
 from rightmove.run import download_properties, download_property_data
-from send_email import send_email
 
 app = Flask(__name__)
 
@@ -29,36 +29,36 @@ def index():
     sql = "select distinct email_id, str_date from reviewdates order by email_id desc"
     items = pd.read_sql(sql, engine).to_records()
 
-    # Get count of new properties:
-    sql = "select count(*) from alert_properties where travel_time < 45 and review_id is null"
-    count_props = pd.read_sql(sql, engine).values[0][0]
+    new_properties = count_new_properties()
 
-    new_properties = ""
-    if count_props > 0:
-        new_properties = f" - {count_props} new"
-
-    logger.info(f"New properties: {count_props}")
-
-    return render_template('index.html', title="Home", items=items, new_properties=new_properties)
+    return render_template(
+        'index.html',
+        title="Home",
+        items=items,
+        new_properties=new_properties
+    )
 
 
 @app.route('/email_template', methods=["GET"])
 def email_template():
     data = request.args.to_dict()
     review_id = data.get("id")
-    include_nav = False
     match review_id:
-        case None:
-            review_filter = "latest_reviewed"
-            include_nav = True
         case "latest":
             review_filter = "review_id is null"
         case _:
             review_filter = f"review_id = {review_id}"
 
+    new_properties = count_new_properties()
     properties = get_properties(review_filter)
 
-    return render_template('template.html', title="View properties", properties=properties, review_id=review_id)
+    return render_template(
+        'template.html',
+        title="View properties",
+        properties=properties,
+        review_id=review_id,
+        new_properties=new_properties
+    )
 
 
 @app.route('/review_latest')
@@ -155,6 +155,19 @@ def get_properties(sql_filter):
         properties.append(data)
 
     return properties
+
+
+def count_new_properties() -> str:
+    engine = create_engine(sqlite_url, echo=False)
+    # Get count of new properties:
+    sql = "select count(*) from alert_properties where travel_time < 45 and review_id is null"
+    count_props = pd.read_sql(sql, engine).values[0][0]
+
+    new_properties = ""
+    if count_props > 0:
+        new_properties = f" - {count_props} new"
+
+    return new_properties
 
 
 if __name__ == '__main__':

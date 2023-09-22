@@ -1,6 +1,6 @@
 import asyncio
 
-from email_html.html_renderer import app
+from email_html.app import app
 from rightmove.api_wrapper import Rightmove
 from rightmove.database import RightmoveDatabase
 from rightmove.geolocation import update_locations
