@@ -1,4 +1,13 @@
-/venv
+**/.idea/
+**/.sass-cache/
+**/__pycache__/
+/venv/
+
 /shapes/*.json
 database.db
+
+# Secrets:
+token.pickle
+credentials.json
+email_details.json
 

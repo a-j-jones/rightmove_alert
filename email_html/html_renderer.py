@@ -1,6 +1,9 @@
 import asyncio
 import datetime as dt
 import logging
+import os
+import subprocess
+from pathlib import Path
 
 import pandas as pd
 import waitress
@@ -10,6 +13,7 @@ from sqlmodel import create_engine, Session
 from rightmove.geolocation import update_locations
 from rightmove.models import ReviewDates, ReviewedProperties, sqlite_url
 from rightmove.run import download_properties, download_property_data
+from send_email import send_email
 
 app = Flask(__name__)
 
@@ -52,41 +56,9 @@ def email_template():
         case _:
             review_filter = f"review_id = {review_id}"
 
-    sql = f"""
-    select * from alert_properties
-    where 
-        travel_time < 45
-        and {review_filter}
-    """
+    properties = get_properties(review_filter)
 
-    # Reading data from CSV
-    engine = create_engine(sqlite_url, echo=False)
-    df = pd.read_sql(sql, engine)
-
-    properties = []
-    for index, property in df.iterrows():
-
-        travel_time = f"About {property.travel_time} minutes"
-
-        data = {
-            "link": f"https://www.rightmove.co.uk/properties/{property.property_id}",
-            "title": property.property_description,
-            "address": property.address,
-            "status": f"Last update {property.last_update}",
-            "description": property.summary,
-            "price": f"£{property.price_amount:,.0f}",
-            "travel_time": travel_time
-        }
-
-        if type(property["images"]) == str:
-            data["images"] = [{'url': img.strip().replace("171x162", "476x317"), 'alt': 'Property'} for img in
-                              property['images'].split(',')][:2]
-        else:
-            data["images"] = []
-
-        properties.append(data)
-
-    return render_template('template.html', title="View properties", properties=properties, review_id=review_id, include_nav=include_nav)
+    return render_template('template.html', title="View properties", properties=properties, review_id=review_id)
 
 
 @app.route('/review_latest')
@@ -121,6 +93,68 @@ def download():
     update_locations()
 
     return redirect(url_for('index'))
+
+
+@app.route('/send_email')
+def send():
+    data = request.args.to_dict()
+    review_id = data.get("id")
+    review_filter = f"review_id = {review_id}"
+    properties = get_properties(review_filter)
+
+    input = Path(os.path.abspath(os.path.dirname(__file__)), "email_data", "jinja.html")
+    output = Path(os.path.abspath(os.path.dirname(__file__)), "email_data", "bootstrap.html")
+
+    # Render jinja2 template:
+    logger.info("Rendering template...")
+    with open(input, "w", encoding="utf-8") as f:
+        f.write(render_template('BootstrapEmail.html', properties=properties))
+
+    subprocess.run(
+        rf'"C:\tools\ruby31\bin\bootstrap-email.bat" "{input}" > "{output}"', text=True, shell=True
+    )
+
+    send_email()
+
+    return redirect(url_for('index'))
+
+
+def get_properties(sql_filter):
+    sql = f"""
+    select * from alert_properties
+    where 
+        travel_time < 45
+        and {sql_filter}
+    """
+
+    # Reading data from CSV
+    engine = create_engine(sqlite_url, echo=False)
+    df = pd.read_sql(sql, engine)
+
+    properties = []
+    for index, property in df.iterrows():
+
+        travel_time = f"About {property.travel_time} minutes"
+
+        data = {
+            "link": f"https://www.rightmove.co.uk/properties/{property.property_id}",
+            "title": property.property_description,
+            "address": property.address,
+            "status": f"Last update {property.last_update}",
+            "description": property.summary,
+            "price": f"£{property.price_amount:,.0f}",
+            "travel_time": travel_time
+        }
+
+        if type(property["images"]) == str:
+            data["images"] = [{'url': img.strip().replace("171x162", "476x317"), 'alt': 'Property'} for img in
+                              property['images'].split(',')][:2]
+        else:
+            data["images"] = []
+
+        properties.append(data)
+
+    return properties
 
 
 if __name__ == '__main__':

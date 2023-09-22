@@ -1,12 +1,11 @@
 import asyncio
 
-from rightmove.database import RightmoveDatabase
-from rightmove.models import sqlite_url
-from rightmove.api_wrapper import Rightmove
-from rightmove.search_algorithm import RightmoveSearcher
-
-from rightmove.geolocation import update_locations
 from email_html.html_renderer import app
+from rightmove.api_wrapper import Rightmove
+from rightmove.database import RightmoveDatabase
+from rightmove.geolocation import update_locations
+from rightmove.models import sqlite_url
+from rightmove.search_algorithm import RightmoveSearcher
 
 
 async def download_properties(channel):
