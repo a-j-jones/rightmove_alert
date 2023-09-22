@@ -1,7 +1,7 @@
 # Use an official Python runtime as the base image
 FROM python:3.11-slim
 
-# Set environment variables to non-interactive (this prevents some prompts)
+# Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Set the working directory
@@ -15,14 +15,13 @@ RUN apt-get update && \
 # Install bootstrap-email gem
 RUN gem install bootstrap-email
 
-# First, copy only the requirements.txt to leverage Docker cache
+# Install Python dependencies
 COPY requirements.txt /app/
-
-# Install Python packages
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the current directory contents into the container at /app
+# Copy the rest of the app
 COPY . /app/
 
-# Specify the command to run on container start
+# Use the entrypoint script to initialize the database
+ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["python", "app.py"]

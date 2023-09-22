@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pandas as pd
 import waitress
-from flask import Flask, redirect, render_template, request, url_for
+from flask import Flask, redirect, render_template, request, send_from_directory, url_for
 from sqlmodel import create_engine, Session
 
 from email_data.send_email import send_email
@@ -22,6 +22,14 @@ logger = logging.getLogger('waitress')
 logger.setLevel(logging.INFO)
 
 is_windows = os.name == 'nt'
+
+
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(
+        os.path.join(app.root_path, 'static'),
+        'favicon.ico', mimetype='image/vnd.microsoft.icon'
+        )
 
 
 @app.route('/')

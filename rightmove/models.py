@@ -1,14 +1,20 @@
 import datetime as dt
-from os import path
+import os
+from pathlib import Path
 from typing import Optional
 
 from pydantic import validator
 from sqlmodel import create_engine, Field, SQLModel
 
-sqlite_file_name = "database.db"
-absolute_sqlite_file_path = path.join(path.dirname(__file__), sqlite_file_name)
-sqlite_url = f"sqlite:///{absolute_sqlite_file_path}"
+if os.name == "nt":
+    sqlite_file_name = "database/database.db"
+    current_directory = Path(__file__).resolve().parent
+    parent_dir = current_directory.parent
+    absolute_sqlite_file_path = parent_dir / sqlite_file_name
+else:
+    absolute_sqlite_file_path = "/data/database.db"
 
+sqlite_url = f"sqlite:///{absolute_sqlite_file_path}"
 
 class PropertyLocation(SQLModel, table=True):
     """
@@ -82,7 +88,9 @@ class ReviewDates(SQLModel, table=True):
     """
     Model to store properties that have already been considered / emailed to the customer
     """
-    reviewed_date: dt.datetime = Field(default=dt.datetime.now(), primary_key=True, foreign_key="reviewedproperties.reviewed_date")
+    reviewed_date: dt.datetime = Field(
+        default=dt.datetime.now(), primary_key=True, foreign_key="reviewedproperties.reviewed_date"
+    )
     email_id: int = Field(default=None)
     str_date: Optional[str] = Field(default=None)
 
