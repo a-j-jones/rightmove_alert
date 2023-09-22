@@ -22,8 +22,8 @@ SCOPES = [
 def get_service():
     logger.info("Getting gmail credentials...")
     creds = None
-    if os.path.exists('email_data/token.pickle'):
-        with open('email_data/token.pickle', 'rb') as token:
+    if os.path.exists('token.pickle'):
+        with open('token.pickle', 'rb') as token:
             creds = pickle.load(token)
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
@@ -32,11 +32,11 @@ def get_service():
             creds.refresh(Request(http))
         else:
             flow = InstalledAppFlow.from_client_secrets_file(
-                'email_data/credentials.json', SCOPES
+                'credentials.json', SCOPES
             )
             creds = flow.run_local_server(port=0)
         # Save the credentials for the next run
-        with open('email_data/token.pickle', 'wb') as token:
+        with open('token.pickle', 'wb') as token:
             pickle.dump(creds, token)
 
     return build('gmail', 'v1', credentials=creds)
@@ -44,7 +44,7 @@ def get_service():
 
 def create_email():
     logger.info("Creating email...")
-    with open("email_data/email_details.json", "r") as f:
+    with open("email_details.json", "r") as f:
         data = json.load(f)
         logger.info(f"Recipients: {data['recipients']}")
 
@@ -54,7 +54,7 @@ def create_email():
     msg['Subject'] = "Property update"
 
     # HTML Email Content
-    with open("email_data/bootstrap.html", "r") as f:
+    with open("bootstrap.html", "r") as f:
         html_content = f.read()
 
     # Attach HTML Content

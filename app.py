@@ -10,7 +10,7 @@ import waitress
 from flask import Flask, redirect, render_template, request, url_for
 from sqlmodel import create_engine, Session
 
-from email_html.send_email import send_email
+from email_data.send_email import send_email
 from rightmove.geolocation import update_locations
 from rightmove.models import ReviewDates, ReviewedProperties, sqlite_url
 from rightmove.run import download_properties, download_property_data
@@ -108,7 +108,7 @@ def send():
     # Render jinja2 template:
     logger.info("Rendering template...")
     with open(input, "w", encoding="utf-8") as f:
-        f.write(render_template('BootstrapEmail.html', properties=properties))
+        f.write(render_template('send_email_template.html', properties=properties))
 
     subprocess.run(
         rf'"C:\tools\ruby31\bin\bootstrap-email.bat" "{input}" > "{output}"', text=True, shell=True
