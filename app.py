@@ -2,6 +2,7 @@ import asyncio
 import datetime as dt
 import logging
 import os
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -19,6 +20,8 @@ app = Flask(__name__)
 
 logger = logging.getLogger('waitress')
 logger.setLevel(logging.INFO)
+
+is_windows = os.name == 'nt'
 
 
 @app.route('/')
@@ -110,9 +113,14 @@ def send():
     with open(input, "w", encoding="utf-8") as f:
         f.write(render_template('send_email_template.html', properties=properties))
 
-    subprocess.run(
-        rf'"C:\tools\ruby31\bin\bootstrap-email.bat" "{input}" > "{output}"', text=True, shell=True
-    )
+    executable_name = "bootstrap-email.bat" if is_windows else "bootstrap-email"
+    bootstrap_email_path = shutil.which(executable_name)
+    if bootstrap_email_path:
+        cmd = rf'"{bootstrap_email_path}" "{input}" > "{output}"'
+        subprocess.run(cmd, text=True, shell=True)
+    else:
+        logger.error("bootstrap-email.bat was not found.")
+        return redirect(url_for('index'))
 
     send_email()
 
@@ -171,8 +179,12 @@ def count_new_properties() -> str:
 
 
 if __name__ == '__main__':
-    port = 5000
-    host = '127.0.0.1'
+    port = 5001
+
+    if is_windows:
+        host = '127.0.0.1'
+    else:
+        host = '0.0.0.0'
 
     logger.info("Starting server...")
     waitress.serve(app, port=port, host=host)
