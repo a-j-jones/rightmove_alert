@@ -9,5 +9,13 @@ services:
       - db-data:/data
     restart: always
 
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile.scheduler
+    volumes:
+      - db-data:/data
+    restart: always
+
 volumes:
   db-data:

@@ -3,14 +3,20 @@ import json
 import logging
 import os
 import pickle
+import shutil
+import subprocess
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from pathlib import Path
 
 import httplib2
 from google_auth_httplib2 import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
+from jinja2 import Environment, FileSystemLoader
 from requests import HTTPError
+
+from rightmove.run import get_properties
 
 logger = logging.getLogger('waitress')
 
@@ -61,6 +67,39 @@ def create_email():
     msg.attach(MIMEText(html_content, 'html'))
 
     return {'raw': base64.urlsafe_b64encode(msg.as_bytes()).decode()}
+
+
+def prepare_email_html(review_id) -> bool:
+    review_filter = f"review_id = {review_id}"
+    properties = get_properties(review_filter)
+
+    infile = Path(os.path.abspath(os.path.dirname(__file__)), "jinja.html")
+    outfile = Path(os.path.abspath(os.path.dirname(__file__)), "bootstrap.html")
+
+    # Render jinja2 template:
+    logger.info("Rendering template...")
+    
+    if os.name == 'nt':
+        env = Environment(loader=FileSystemLoader('templates'))
+    else:
+        env = Environment(loader=FileSystemLoader('/app/email_data/templates'))
+
+    template = env.get_template('send_email_template.html')
+    with open(infile, "w", encoding="utf-8") as f:
+        f.write(template.render(properties=properties))
+
+    executable_name = "bootstrap-email.bat" if os.name == 'nt' else "bootstrap-email"
+    bootstrap_email_path = shutil.which(executable_name)
+    if bootstrap_email_path:
+        print(f"Creating output file: {outfile}")
+        cmd = rf'"{bootstrap_email_path}" "{infile}" > "{outfile}"'
+        subprocess.run(cmd, text=True, shell=True)
+    else:
+        print("bootstrap-email.bat was not found.")
+        logger.error("bootstrap-email.bat was not found.")
+        return False
+
+    return True
 
 
 def send_email():

@@ -1,20 +1,16 @@
 import asyncio
-import datetime as dt
 import logging
 import os
-import shutil
-import subprocess
-from pathlib import Path
 
 import pandas as pd
 import waitress
 from flask import Flask, redirect, render_template, request, send_from_directory, url_for
 from sqlmodel import create_engine, Session
 
-from email_data.send_email import send_email
+from email_data.send_email import prepare_email_html, send_email
 from rightmove.geolocation import update_locations
-from rightmove.models import ReviewDates, ReviewedProperties, sqlite_url
-from rightmove.run import download_properties, download_property_data
+from rightmove.models import sqlite_url
+from rightmove.run import download_properties, download_property_data, get_properties, mark_properties_reviewed
 
 app = Flask(__name__)
 
@@ -29,7 +25,7 @@ def favicon():
     return send_from_directory(
         os.path.join(app.root_path, 'static'),
         'favicon.ico', mimetype='image/vnd.microsoft.icon'
-        )
+    )
 
 
 @app.route('/')
@@ -74,25 +70,7 @@ def email_template():
 
 @app.route('/review_latest')
 def review_latest():
-    engine = create_engine(sqlite_url, echo=False)
-    property_ids = pd.read_sql("SELECT property_id FROM alert_properties where not property_reviewed", engine)
-    review_id = pd.read_sql("select max(email_id) as last_id from reviewdates", engine).last_id[0] + 1
-
-    with Session(engine) as session:
-        review_date = dt.datetime.now()
-        if len(property_ids) > 0:
-            session.add(
-                ReviewDates(
-                    email_id=review_id,
-                    reviewed_date=review_date,
-                    str_date=review_date.strftime("%d-%b-%Y")
-                )
-            )
-
-        for id in property_ids.property_id.unique():
-            session.add(ReviewedProperties(property_id=id, reviewed_date=review_date, emailed=False))
-
-        session.commit()
+    mark_properties_reviewed()
 
     return redirect(url_for('index'))
 
@@ -110,67 +88,25 @@ def download():
 def send():
     data = request.args.to_dict()
     review_id = data.get("id")
-    review_filter = f"review_id = {review_id}"
-    properties = get_properties(review_filter)
 
-    input = Path(os.path.abspath(os.path.dirname(__file__)), "email_data", "jinja.html")
-    output = Path(os.path.abspath(os.path.dirname(__file__)), "email_data", "bootstrap.html")
-
-    # Render jinja2 template:
-    logger.info("Rendering template...")
-    with open(input, "w", encoding="utf-8") as f:
-        f.write(render_template('send_email_template.html', properties=properties))
-
-    executable_name = "bootstrap-email.bat" if is_windows else "bootstrap-email"
-    bootstrap_email_path = shutil.which(executable_name)
-    if bootstrap_email_path:
-        cmd = rf'"{bootstrap_email_path}" "{input}" > "{output}"'
-        subprocess.run(cmd, text=True, shell=True)
-    else:
-        logger.error("bootstrap-email.bat was not found.")
-        return redirect(url_for('index'))
-
-    send_email()
+    if prepare_email_html(review_id):
+        send_email()
 
     return redirect(url_for('index'))
 
+# @app.route("/delete_review")
+def delete_review(review_id):
+    # data = request.args.to_dict()
+    # review_id = data.get("id")
 
-def get_properties(sql_filter):
-    sql = f"""
-    select * from alert_properties
-    where 
-        travel_time < 45
-        and {sql_filter}
-    """
-
-    # Reading data from CSV
     engine = create_engine(sqlite_url, echo=False)
-    df = pd.read_sql(sql, engine)
+    with Session(engine) as session:
+        date = session.exec(f"select reviewed_date from reviewdates where email_id={review_id}").first()[0]
+        session.exec(f"delete from reviewdates where email_id={review_id}")
+        session.exec(f"delete from reviewedproperties where reviewed_date='{date}'")
+        session.commit()
 
-    properties = []
-    for index, property in df.iterrows():
-
-        travel_time = f"About {property.travel_time} minutes"
-
-        data = {
-            "link": f"https://www.rightmove.co.uk/properties/{property.property_id}",
-            "title": property.property_description,
-            "address": property.address,
-            "status": f"Last update {property.last_update}",
-            "description": property.summary,
-            "price": f"£{property.price_amount:,.0f}",
-            "travel_time": travel_time
-        }
-
-        if type(property["images"]) == str:
-            data["images"] = [{'url': img.strip().replace("171x162", "476x317"), 'alt': 'Property'} for img in
-                              property['images'].split(',')][:2]
-        else:
-            data["images"] = []
-
-        properties.append(data)
-
-    return properties
+    return redirect(url_for('index'))
 
 
 def count_new_properties() -> str:
@@ -187,12 +123,12 @@ def count_new_properties() -> str:
 
 
 if __name__ == '__main__':
-    port = 5001
-
     if is_windows:
         host = '127.0.0.1'
+        port = 5002
     else:
         host = '0.0.0.0'
+        port = 5001
 
     logger.info("Starting server...")
     waitress.serve(app, port=port, host=host)

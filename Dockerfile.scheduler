@@ -1,0 +1,35 @@
+# Use an official Python runtime as the base image
+FROM python:3.11-slim
+
+# Set environment variables
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Set the working directory
+WORKDIR /app
+
+# Install system dependencies and Ruby
+RUN apt-get update && \
+    apt-get install -y ruby-full build-essential && \
+    apt-get clean
+
+# Install bootstrap-email gem
+RUN gem install bootstrap-email
+
+# Install cron
+RUN apt-get update && apt-get install -y cron
+
+# Copy the requirements file and install Python dependencies
+COPY requirements.txt /app/
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy your Python script and data files:
+COPY update_script.py /app/
+COPY email_data /app/email_data
+COPY rightmove /app/rightmove
+COPY templates /app/templates
+
+# Add a cron job
+RUN echo "* * * * * /usr/local/bin/python /app/update_script.py >> /var/log/cron.log 2>&1" | crontab -
+
+# Run cron daemon in the foreground
+CMD ["cron", "-f"]
