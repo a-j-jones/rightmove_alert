@@ -94,10 +94,11 @@ def send():
 
     return redirect(url_for('index'))
 
-# @app.route("/delete_review")
-def delete_review(review_id):
-    # data = request.args.to_dict()
-    # review_id = data.get("id")
+
+@app.route("/delete_review")
+def delete_review():
+    data = request.args.to_dict()
+    review_id = data.get("id")
 
     engine = create_engine(sqlite_url, echo=False)
     with Session(engine) as session:

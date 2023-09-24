@@ -81,15 +81,15 @@ def prepare_email_html(review_id) -> bool:
     
     if os.name == 'nt':
         env = Environment(loader=FileSystemLoader('templates'))
+        bootstrap_email_path = shutil.which("bootstrap-email.bat")
     else:
-        env = Environment(loader=FileSystemLoader('/app/email_data/templates'))
+        env = Environment(loader=FileSystemLoader('/app/templates'))
+        bootstrap_email_path = shutil.which("/usr/local/bin/bootstrap-email")
 
     template = env.get_template('send_email_template.html')
     with open(infile, "w", encoding="utf-8") as f:
         f.write(template.render(properties=properties))
 
-    executable_name = "bootstrap-email.bat" if os.name == 'nt' else "bootstrap-email"
-    bootstrap_email_path = shutil.which(executable_name)
     if bootstrap_email_path:
         print(f"Creating output file: {outfile}")
         cmd = rf'"{bootstrap_email_path}" "{infile}" > "{outfile}"'

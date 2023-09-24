@@ -29,7 +29,7 @@ COPY rightmove /app/rightmove
 COPY templates /app/templates
 
 # Add a cron job
-RUN echo "* * * * * /usr/local/bin/python /app/update_script.py >> /var/log/cron.log 2>&1" | crontab -
+RUN echo "0 9 * * * cd /app/ && /usr/local/bin/python /app/update_script.py >> /var/log/cron.log 2>&1" | crontab -
 
 # Run cron daemon in the foreground
 CMD ["cron", "-f"]
