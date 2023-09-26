@@ -3,10 +3,10 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 </head>
 <body class="bg-light">
-<div class="container">
+<div class="container-fluid">
     {% for property in properties %}
         <div class="card my-3">
-            <div class="card-body">
+            <div class="card-body pr-0">
 
                 <div class="space-y-3">
                     <div class="row">
@@ -17,19 +17,23 @@
                         {% endfor %}
                     </div>
                     <div class="row">
-                        <div class="col-9"><a href="{{ property.link }}"><h1 class="h4 text-teal-700">{{ property.title }}</h1></a></div>
-                        <div class="col-3"><p class="h4 ax-right">{{ property.price }}</p></div>
+                        <div class="col-9"><a href="{{ property.link }}"><h1 class="h5 text-teal-700">{{ property.title }}</h1></a></div>
+                        <div class="col-3"><p class="h5 ax-right">{{ property.price }}</p></div>
                     </div>
                 </div>
 
-                <div class="space-y-2">
-                    <p class=" text-base">{{ property.address }}</p>
-                    <p class="text-teal-500 text-sm">{{ property.travel_time }}</p>
-                </div>
+                <div class="row">
+                    <div class="col">
+                        <div class="space-y-2">
+                            <p class="text-sm">{{ property.address }}</p>
+                            <p class="text-teal-500 text-xs">{{ property.travel_time }}</p>
+                        </div>
 
-                <div class="space-y-2">
-                    <p class="text-teal-500 text-sm">{{ property.status }}</p>
-                    <p class=" text-base">{{ property.description }}</p>
+                        <div class="space-y-2">
+                            <p class="text-teal-500 text-xs">{{ property.status }}</p>
+                            <p class=" text-sm">{{ property.description }}</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
