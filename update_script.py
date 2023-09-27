@@ -1,12 +1,13 @@
 import asyncio
 import logging
+
 from sqlmodel import create_engine, select, Session
 
+from app import count_new_properties
 from email_data.send_email import prepare_email_html, send_email
 from rightmove.geolocation import update_locations
 from rightmove.models import ReviewDates, sqlite_url
 from rightmove.run import download_properties, download_property_data, mark_properties_reviewed
-
 
 logger = logging.getLogger(__name__)
 sh = logging.StreamHandler()
@@ -16,8 +17,8 @@ sh.setFormatter(formatter)
 logger.addHandler(sh)
 
 
-if __name__ == "__main__":
-    # Download latest properties and data:
+def main():
+    # Download the latest properties and data:
     print("Downloading properties and data...")
     asyncio.run(download_properties("BUY"))
     asyncio.run(download_property_data(update=False))
@@ -25,6 +26,12 @@ if __name__ == "__main__":
     # Update geolocation data:
     print("Updating geolocation data...")
     update_locations()
+
+    print("Getting number of new properties...")
+    count = count_new_properties()
+    if count == 0:
+        print("No new properties found.")
+        return
 
     # Mark properties as reviewed:
     print("Marking properties as reviewed...")
@@ -41,3 +48,7 @@ if __name__ == "__main__":
         if prepare_email_html(email_id):
             print("Sending email...")
             send_email()
+
+
+if __name__ == "__main__":
+    main()

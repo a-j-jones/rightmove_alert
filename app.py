@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 import os
 
@@ -108,6 +109,29 @@ def delete_review():
         session.commit()
 
     return redirect(url_for('index'))
+
+
+@app.route("/settings", methods=['GET'])
+def settings():
+    with open("email_data/email_details.json", "r") as f:
+        email_data = json.load(f)
+    return render_template("settings.html", email_data=email_data)
+
+
+@app.route("/settings", methods=['POST'])
+def update_settings():
+    form_data = request.form
+    recipients = form_data.getlist('recipients[]')
+
+    file = "email_data/email_details.json"
+    with open(file, "r") as f:
+        data = json.load(f)
+        data['recipients'] = recipients
+
+    with open(file, "w") as f:
+        json.dump(data, f, indent=4)
+
+    return redirect("/")
 
 
 def count_new_properties() -> str:
