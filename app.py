@@ -15,6 +15,7 @@ from flask import (
 )
 from sqlmodel import create_engine, Session
 
+from config import DATA, IS_WINDOWS
 from email_data.send_email import prepare_email_html, send_email
 from rightmove.geolocation import update_locations
 from rightmove.models import sqlite_url
@@ -24,7 +25,6 @@ from rightmove.run import (
     get_properties,
     mark_properties_reviewed,
 )
-from config import IS_WINDOWS, DATA
 
 app = Flask(__name__)
 
