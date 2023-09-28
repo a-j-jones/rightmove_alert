@@ -12,13 +12,12 @@ from email_data.send_email import prepare_email_html, send_email
 from rightmove.geolocation import update_locations
 from rightmove.models import sqlite_url
 from rightmove.run import download_properties, download_property_data, get_properties, mark_properties_reviewed
+from config import IS_WINDOWS, DATA
 
 app = Flask(__name__)
 
 logger = logging.getLogger('waitress')
 logger.setLevel(logging.INFO)
-
-is_windows = os.name == 'nt'
 
 
 @app.route('/favicon.ico')
@@ -113,7 +112,7 @@ def delete_review():
 
 @app.route("/settings", methods=['GET'])
 def settings():
-    with open("data/email_details.json", "r") as f:
+    with open(os.path.join(DATA, "email_details.json"), "r") as f:
         email_data = json.load(f)
     return render_template("settings.html", email_data=email_data)
 
@@ -123,7 +122,7 @@ def update_settings():
     form_data = request.form
     recipients = form_data.getlist('recipients[]')
 
-    file = "data/email_details.json"
+    file = os.path.join(DATA, "email_details.json")
     with open(file, "r") as f:
         data = json.load(f)
         data['recipients'] = recipients
@@ -148,7 +147,7 @@ def count_new_properties() -> str:
 
 
 if __name__ == '__main__':
-    if is_windows:
+    if IS_WINDOWS:
         host = '127.0.0.1'
         port = 5002
     else:

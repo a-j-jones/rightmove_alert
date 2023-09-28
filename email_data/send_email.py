@@ -17,6 +17,7 @@ from jinja2 import Environment, FileSystemLoader
 from requests import HTTPError
 
 from rightmove.run import get_properties
+from config import TEMPLATES, BOOTSTRAP_UTIL, BASE_DIR
 
 logger = logging.getLogger('waitress')
 
@@ -73,18 +74,14 @@ def prepare_email_html(review_id) -> bool:
     review_filter = f"review_id = {review_id}"
     properties = get_properties(review_filter)
 
-    infile = Path(os.path.abspath(os.path.dirname(__file__)), "jinja.html")
-    outfile = Path(os.path.abspath(os.path.dirname(__file__)), "bootstrap.html")
+    infile = Path(BASE_DIR, "jinja.html")
+    outfile = Path(BASE_DIR, "bootstrap.html")
 
     # Render jinja2 template:
     logger.info("Rendering template...")
-    
-    if os.name == 'nt':
-        env = Environment(loader=FileSystemLoader('templates'))
-        bootstrap_email_path = shutil.which("bootstrap-email.bat")
-    else:
-        env = Environment(loader=FileSystemLoader('/app/templates'))
-        bootstrap_email_path = shutil.which("/usr/local/bin/bootstrap-email")
+
+    env = Environment(loader=FileSystemLoader(TEMPLATES))
+    bootstrap_email_path = shutil.which(BOOTSTRAP_UTIL)
 
     template = env.get_template('send_email_template.html')
     with open(infile, "w", encoding="utf-8") as f:

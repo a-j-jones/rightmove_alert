@@ -1,20 +1,13 @@
 import datetime as dt
-import os
-from pathlib import Path
 from typing import Optional
 
 from pydantic import validator
 from sqlmodel import create_engine, Field, SQLModel
 
-if os.name == "nt":
-    sqlite_file_name = "data/database.db"
-    current_directory = Path(__file__).resolve().parent
-    parent_dir = current_directory.parent
-    absolute_sqlite_file_path = parent_dir / sqlite_file_name
-else:
-    absolute_sqlite_file_path = "/data/database.db"
+from config import SQL_PATH
 
-sqlite_url = f"sqlite:///{absolute_sqlite_file_path}"
+sqlite_url = f"sqlite:///{SQL_PATH}"
+
 
 class PropertyLocation(SQLModel, table=True):
     """
