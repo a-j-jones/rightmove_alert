@@ -24,7 +24,7 @@ async def get_results(minutes: int) -> Tuple[int, TimeMapResult]:
         coordinates=[Coordinates(lat=LAT, lng=LON)],
         departure_time=ARRIVAL_TIME,
         travel_time=seconds,
-        transportation=PublicTransport(type="public_transport")
+        transportation=PublicTransport(type="public_transport"),
     )
     return minutes, results[0]
 

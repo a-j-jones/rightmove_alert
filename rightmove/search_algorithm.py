@@ -13,24 +13,27 @@ class RightmoveSearcher:
     def __init__(self, rightmove_api: Rightmove, database: RightmoveDatabase):
         self.rm = rightmove_api
         self.database = database
-        self.progress_format = "{desc:<20} {percentage:3.0f}%|{bar}| remaining: {remaining_s:.1f}"
+        self.progress_format = (
+            "{desc:<20} {percentage:3.0f}%|{bar}| remaining: {remaining_s:.1f}"
+        )
         self.progress = None
         self.tasks = []
 
-    async def get_all_properties(self,
-                                 region_search: str,
-                                 lat1: float,
-                                 lat2: float,
-                                 lon1: float,
-                                 lon2: float,
-                                 load_sql: bool = True,
-                                 channel: Optional[str] = "BUY",
-                                 index: Optional[int] = 0,
-                                 radius: Optional[int] = 5,
-                                 sstc: Optional[bool] = False,
-                                 exclude: Optional[list] = None,
-                                 include: Optional[list] = None
-                                 ) -> bool:
+    async def get_all_properties(
+        self,
+        region_search: str,
+        lat1: float,
+        lat2: float,
+        lon1: float,
+        lon2: float,
+        load_sql: bool = True,
+        channel: Optional[str] = "BUY",
+        index: Optional[int] = 0,
+        radius: Optional[int] = 5,
+        sstc: Optional[bool] = False,
+        exclude: Optional[list] = None,
+        include: Optional[list] = None,
+    ) -> bool:
         """
         Interacts with the rightmove.Rightmove API wrapper to perform a grid search of an entire area, finding
         every possible property on the website within given coordinates and region search term.
@@ -61,24 +64,25 @@ class RightmoveSearcher:
         self.progress = tqdm(
             total=self.get_viewport_size(lat1, lat2, lon1, lon2),
             desc="Map search",
-            bar_format=self.progress_format
+            bar_format=self.progress_format,
         )
         await self._get_all_properties_recurse(**api_args)
 
-    async def _get_all_properties_recurse(self,
-                                          region_search: str,
-                                          lat1: float,
-                                          lat2: float,
-                                          lon1: float,
-                                          lon2: float,
-                                          load_sql: bool = True,
-                                          channel: Optional[str] = "BUY",
-                                          index: Optional[int] = 0,
-                                          radius: Optional[int] = 5,
-                                          sstc: Optional[bool] = False,
-                                          exclude: Optional[list] = None,
-                                          include: Optional[list] = None
-                                          ) -> bool:
+    async def _get_all_properties_recurse(
+        self,
+        region_search: str,
+        lat1: float,
+        lat2: float,
+        lon1: float,
+        lon2: float,
+        load_sql: bool = True,
+        channel: Optional[str] = "BUY",
+        index: Optional[int] = 0,
+        radius: Optional[int] = 5,
+        sstc: Optional[bool] = False,
+        exclude: Optional[list] = None,
+        include: Optional[list] = None,
+    ) -> bool:
         """
         See documentation for get_all_properties()
         """
@@ -97,9 +101,13 @@ class RightmoveSearcher:
         for viewport in self.get_new_viewports(lat1, lat2, lon1, lon2):
             api_args.update(viewport)
             # print(f"Running code for {viewport}")
-            self.tasks.append(asyncio.create_task(self._get_all_properties_recurse(**api_args)))
+            self.tasks.append(
+                asyncio.create_task(self._get_all_properties_recurse(**api_args))
+            )
 
-    async def get_all_property_data(self, update: bool = False, update_cutoff: dt.datetime = None) -> None:
+    async def get_all_property_data(
+        self, update: bool = False, update_cutoff: dt.datetime = None
+    ) -> None:
         """
         Gets all property data for both RENT/BUY channels and uploads to the Database.
         :param update:          bool            If True the function will look to update data for already held
@@ -108,22 +116,24 @@ class RightmoveSearcher:
         """
 
         for channel in ["RENT", "BUY"]:
-            total = self.database.get_id_len(update, channel=channel, update_cutoff=update_cutoff)
+            total = self.database.get_id_len(
+                update, channel=channel, update_cutoff=update_cutoff
+            )
             self.progress = tqdm(
                 total=total,
                 desc=f"Downloading {channel}",
-                bar_format=self.progress_format
+                bar_format=self.progress_format,
             )
-            for ids in self.database.get_id_list(update, channel=channel, update_cutoff=update_cutoff):
-                await self.rm.get_property_data(channel=channel, ids=ids, progress=self.progress)
+            for ids in self.database.get_id_list(
+                update, channel=channel, update_cutoff=update_cutoff
+            ):
+                await self.rm.get_property_data(
+                    channel=channel, ids=ids, progress=self.progress
+                )
             self.progress.close()
 
     @staticmethod
-    def get_viewport_size(lat1: float,
-                          lat2: float,
-                          lon1: float,
-                          lon2: float
-                          ) -> float:
+    def get_viewport_size(lat1: float, lat2: float, lon1: float, lon2: float) -> float:
         """
         Takes the viewport parameters (two sets of longitude and latitude) and returns the size of the rectangle
         :param lat1:            float   1st Latitude value
@@ -138,11 +148,9 @@ class RightmoveSearcher:
         return a * b
 
     @staticmethod
-    def get_new_viewports(lat1: float,
-                          lat2: float,
-                          lon1: float,
-                          lon2: float
-                          ) -> list[dict, dict]:
+    def get_new_viewports(
+        lat1: float, lat2: float, lon1: float, lon2: float
+    ) -> list[dict, dict]:
         """
         Takes a viewport and divides it into two equal viewports which can then be used to narrow the search
         for properties.
@@ -158,12 +166,7 @@ class RightmoveSearcher:
 
         p1 = (lat1, lon1)
         p2 = (lat2, lon2)
-        viewport = {
-            "lat1": p1[0],
-            "lat2": p2[0],
-            "lon1": p1[1],
-            "lon2": p2[1]
-        }
+        viewport = {"lat1": p1[0], "lat2": p2[0], "lon1": p1[1], "lon2": p2[1]}
 
         # If 1st position difference is bigger than 0th position then 1, else 0:
         position_type = {0: "lat", 1: "lon"}

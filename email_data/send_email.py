@@ -19,18 +19,16 @@ from requests import HTTPError
 from config import BASE_DIR, BOOTSTRAP_UTIL, DATA, TEMPLATES
 from rightmove.run import get_properties
 
-logger = logging.getLogger('waitress')
+logger = logging.getLogger("waitress")
 
-SCOPES = [
-    "https://www.googleapis.com/auth/gmail.send"
-]
+SCOPES = ["https://www.googleapis.com/auth/gmail.send"]
 
 
 def get_service():
     logger.info("Getting gmail credentials...")
     creds = None
-    if os.path.exists('email_data/token.pickle'):
-        with open('email_data/token.pickle', 'rb') as token:
+    if os.path.exists("email_data/token.pickle"):
+        with open("email_data/token.pickle", "rb") as token:
             creds = pickle.load(token)
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
@@ -39,14 +37,14 @@ def get_service():
             creds.refresh(Request(http))
         else:
             flow = InstalledAppFlow.from_client_secrets_file(
-                'email_data/credentials.json', SCOPES
+                "email_data/credentials.json", SCOPES
             )
             creds = flow.run_local_server(port=0)
         # Save the credentials for the next run
-        with open('email_data/token.pickle', 'wb') as token:
+        with open("email_data/token.pickle", "wb") as token:
             pickle.dump(creds, token)
 
-    return build('gmail', 'v1', credentials=creds)
+    return build("gmail", "v1", credentials=creds)
 
 
 def create_email():
@@ -56,19 +54,19 @@ def create_email():
         data = json.load(f)
         logger.info(f"Recipients: {data['recipients']}")
 
-    msg = MIMEMultipart('alternative')
-    msg['From'] = data["from"]
-    msg['To'] = ",".join(data["recipients"])
-    msg['Subject'] = "Property update"
+    msg = MIMEMultipart("alternative")
+    msg["From"] = data["from"]
+    msg["To"] = ",".join(data["recipients"])
+    msg["Subject"] = "Property update"
 
     # HTML Email Content
     with open("email_data/bootstrap.html", "r") as f:
         html_content = f.read()
 
     # Attach HTML Content
-    msg.attach(MIMEText(html_content, 'html'))
+    msg.attach(MIMEText(html_content, "html"))
 
-    return {'raw': base64.urlsafe_b64encode(msg.as_bytes()).decode()}
+    return {"raw": base64.urlsafe_b64encode(msg.as_bytes()).decode()}
 
 
 def prepare_email_html(review_id) -> bool:
@@ -84,7 +82,7 @@ def prepare_email_html(review_id) -> bool:
     env = Environment(loader=FileSystemLoader(TEMPLATES))
     bootstrap_email_path = shutil.which(BOOTSTRAP_UTIL)
 
-    template = env.get_template('send_email_template.html')
+    template = env.get_template("send_email_template.html")
     with open(infile, "w", encoding="utf-8") as f:
         f.write(template.render(properties=properties))
 
@@ -105,7 +103,9 @@ def send_email():
     create_message = create_email()
 
     try:
-        message = (service.users().messages().send(userId="me", body=create_message).execute())
-        logger.info(F'sent message to {message} Message Id: {message["id"]}')
+        message = (
+            service.users().messages().send(userId="me", body=create_message).execute()
+        )
+        logger.info(f'sent message to {message} Message Id: {message["id"]}')
     except HTTPError as error:
-        logger.info(F'An error occurred: {error}')
+        logger.info(f"An error occurred: {error}")

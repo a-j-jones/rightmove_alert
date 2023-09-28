@@ -1,6 +1,6 @@
 import os
 
-IS_WINDOWS = os.name == 'nt'
+IS_WINDOWS = os.name == "nt"
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 if IS_WINDOWS:

@@ -24,7 +24,7 @@ async def download_properties(channel):
             channel=channel,
             exclude=["newHome", "sharedOwnership", "retirement"],
             include=["garden"],
-            load_sql=True
+            load_sql=True,
         )
         await task
 
@@ -44,10 +44,7 @@ async def download_property_data(update, cutoff=None):
     async with Rightmove(database=database) as rightmove_api:
         searcher = RightmoveSearcher(rightmove_api=rightmove_api, database=database)
 
-        task = searcher.get_all_property_data(
-            update=update,
-            update_cutoff=cutoff
-        )
+        task = searcher.get_all_property_data(update=update, update_cutoff=cutoff)
         await task
         while True:
             await asyncio.gather(*asyncio.all_tasks() - {asyncio.current_task()})
@@ -58,8 +55,15 @@ async def download_property_data(update, cutoff=None):
 
 def mark_properties_reviewed():
     engine = create_engine(sqlite_url, echo=False)
-    property_ids = pd.read_sql("SELECT property_id FROM alert_properties where not property_reviewed", engine)
-    review_id = pd.read_sql("select max(email_id) as last_id from reviewdates", engine).last_id[0] + 1
+    property_ids = pd.read_sql(
+        "SELECT property_id FROM alert_properties where not property_reviewed", engine
+    )
+    review_id = (
+        pd.read_sql("select max(email_id) as last_id from reviewdates", engine).last_id[
+            0
+        ]
+        + 1
+    )
 
     with Session(engine) as session:
         review_date = dt.datetime.now()
@@ -68,12 +72,16 @@ def mark_properties_reviewed():
                 ReviewDates(
                     email_id=review_id,
                     reviewed_date=review_date,
-                    str_date=review_date.strftime("%d-%b-%Y")
+                    str_date=review_date.strftime("%d-%b-%Y"),
                 )
             )
 
         for id in property_ids.property_id.unique():
-            session.add(ReviewedProperties(property_id=id, reviewed_date=review_date, emailed=False))
+            session.add(
+                ReviewedProperties(
+                    property_id=id, reviewed_date=review_date, emailed=False
+                )
+            )
 
         session.commit()
 
@@ -92,7 +100,6 @@ def get_properties(sql_filter):
 
     properties = []
     for index, property in df.iterrows():
-
         travel_time = f"About {property.travel_time} minutes"
 
         data = {
@@ -102,12 +109,14 @@ def get_properties(sql_filter):
             "status": f"Last update {property.last_update}",
             "description": property.summary,
             "price": f"£{property.price_amount:,.0f}",
-            "travel_time": travel_time
+            "travel_time": travel_time,
         }
 
         if type(property["images"]) == str:
-            data["images"] = [{'url': img.strip().replace("171x162", "476x317"), 'alt': 'Property'} for img in
-                              property['images'].split(',')][:2]
+            data["images"] = [
+                {"url": img.strip().replace("171x162", "476x317"), "alt": "Property"}
+                for img in property["images"].split(",")
+            ][:2]
         else:
             data["images"] = []
 

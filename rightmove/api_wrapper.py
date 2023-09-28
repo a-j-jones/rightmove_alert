@@ -40,20 +40,21 @@ class Rightmove:
 
         return region_data["typeAheadLocations"][0]["locationIdentifier"]
 
-    async def get_properties(self,
-                             region_search: str,
-                             lat1: float,
-                             lat2: float,
-                             lon1: float,
-                             lon2: float,
-                             load_sql: bool = True,
-                             channel: Optional[str] = "BUY",
-                             index: Optional[int] = 0,
-                             radius: Optional[int] = 5,
-                             sstc: Optional[bool] = False,
-                             exclude: Optional[list] = None,
-                             include: Optional[list] = None
-                             ) -> dict:
+    async def get_properties(
+        self,
+        region_search: str,
+        lat1: float,
+        lat2: float,
+        lon1: float,
+        lon2: float,
+        load_sql: bool = True,
+        channel: Optional[str] = "BUY",
+        index: Optional[int] = 0,
+        radius: Optional[int] = 5,
+        sstc: Optional[bool] = False,
+        exclude: Optional[list] = None,
+        include: Optional[list] = None,
+    ) -> dict:
         """
         Sends a request to the Rightmove servers to get the Property IDs which appear within the given
         map coordinates.
@@ -82,20 +83,31 @@ class Rightmove:
 
         # Parameter checks:
         if type(region_search) != str:
-            raise ValueError(f"Expected string value for region_search, got: {region_search}")
+            raise ValueError(
+                f"Expected string value for region_search, got: {region_search}"
+            )
 
-        for parameter, value in {"lat1": lat1, "lat2": lat2, "lon1": lon1, "lon2": lon2}.items():
+        for parameter, value in {
+            "lat1": lat1,
+            "lat2": lat2,
+            "lon1": lon1,
+            "lon2": lon2,
+        }.items():
             if type(value) != float:
                 raise ValueError(f"Expected float value for {parameter}, got: {value}")
 
         if type(channel) != str or channel.upper() not in ["BUY", "RENT"]:
-            raise ValueError(f"Expected string value of either 'BUY'/'RENT' for channel, got: {channel}")
+            raise ValueError(
+                f"Expected string value of either 'BUY'/'RENT' for channel, got: {channel}"
+            )
 
         if type(index) != int or index < 0:
             raise ValueError(f"Expected positive integer value for index, got: {index}")
 
         if type(radius) != int or radius < 0 or radius > 200:
-            raise ValueError(f"Expected integer value between 0-200 for radius, got: {radius}")
+            raise ValueError(
+                f"Expected integer value between 0-200 for radius, got: {radius}"
+            )
 
         if type(sstc) != bool:
             raise ValueError(f"Expected boolean value for sstc, got: {sstc}")
@@ -105,35 +117,48 @@ class Rightmove:
 
         # Create params dictionary:
         params = {
-            'locationIdentifier': region,
-            'numberOfPropertiesPerPage': '499',
-            'radius': f'{radius:.1f}',
-            'sortType': '2',
-            'index': str(index),
-            'includeSSTC': str(sstc).lower(),
-            'viewType': 'MAP',
-            'channel': channel.upper(),
-            'areaSizeUnit': 'sqft',
-            'currencyCode': 'GBP',
-            'viewport': f"{lon1:.6f},{lon2:.6f},{lat1:.6f},{lat2:.6f}",
-            'isFetching': 'false',
+            "locationIdentifier": region,
+            "numberOfPropertiesPerPage": "499",
+            "radius": f"{radius:.1f}",
+            "sortType": "2",
+            "index": str(index),
+            "includeSSTC": str(sstc).lower(),
+            "viewType": "MAP",
+            "channel": channel.upper(),
+            "areaSizeUnit": "sqft",
+            "currencyCode": "GBP",
+            "viewport": f"{lon1:.6f},{lon2:.6f},{lat1:.6f},{lat2:.6f}",
+            "isFetching": "false",
         }
 
         if exclude:
             for item in exclude:
                 valid_exclusions = ["newHome", "retirement", "sharedOwnership"]
                 if item not in valid_exclusions:
-                    raise ValueError(f"Valid options for exclude are {valid_exclusions}, got: {item}")
+                    raise ValueError(
+                        f"Valid options for exclude are {valid_exclusions}, got: {item}"
+                    )
             params["dontShow"] = ",".join(exclude)
 
         if include:
             for item in include:
-                valid_inclusions = ["garden", "parking", "newHome", "retirement", "sharedOwnership", "auction"]
+                valid_inclusions = [
+                    "garden",
+                    "parking",
+                    "newHome",
+                    "retirement",
+                    "sharedOwnership",
+                    "auction",
+                ]
             if item not in valid_inclusions:
-                raise ValueError(f"Valid options for include are {valid_inclusions}, got: {item}")
+                raise ValueError(
+                    f"Valid options for include are {valid_inclusions}, got: {item}"
+                )
             params["dontShow"] = ",".join(include)
 
-        r = await self.client.get("https://www.rightmove.co.uk/api/_mapSearch", params=params)
+        r = await self.client.get(
+            "https://www.rightmove.co.uk/api/_mapSearch", params=params
+        )
         data = r.json()
 
         if load_sql:
@@ -141,7 +166,9 @@ class Rightmove:
 
         return r.json()
 
-    async def get_property_data(self, channel: str, ids: list[int], progress: tqdm = None) -> dict:
+    async def get_property_data(
+        self, channel: str, ids: list[int], progress: tqdm = None
+    ) -> dict:
         """
         Sends a request to the Rightmove API to get property data from each Property ID given.
         :param channel:     str RENT or BUY channel
@@ -151,14 +178,14 @@ class Rightmove:
         """
 
         if type(channel) != str or channel.upper() not in ["BUY", "RENT"]:
-            raise ValueError(f"Expected string value of either 'BUY'/'RENT' for channel, got: {channel}")
+            raise ValueError(
+                f"Expected string value of either 'BUY'/'RENT' for channel, got: {channel}"
+            )
 
-        params = {
-            "channel": channel.upper(),
-            "propertyIds": ids,
-            "viewType": "MAP"
-        }
-        r = await self.client.get("https://www.rightmove.co.uk/api/_searchByIds", params=params)
+        params = {"channel": channel.upper(), "propertyIds": ids, "viewType": "MAP"}
+        r = await self.client.get(
+            "https://www.rightmove.co.uk/api/_searchByIds", params=params
+        )
 
         try:
             data = r.json()["properties"]
