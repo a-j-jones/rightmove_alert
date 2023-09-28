@@ -75,8 +75,8 @@ def prepare_email_html(review_id) -> bool:
     review_filter = f"review_id = {review_id}"
     properties = get_properties(review_filter)
 
-    infile = Path(BASE_DIR, "jinja.html")
-    outfile = Path(BASE_DIR, "bootstrap.html")
+    infile = Path(BASE_DIR, "email_data", "jinja.html")
+    outfile = Path(BASE_DIR, "email_data", "bootstrap.html")
 
     # Render jinja2 template:
     logger.info("Rendering template...")
