@@ -50,7 +50,7 @@ def get_service():
 
 def create_email():
     logger.info("Creating email...")
-    with open("email_data/email_details.json", "r") as f:
+    with open("data/email_details.json", "r") as f:
         data = json.load(f)
         logger.info(f"Recipients: {data['recipients']}")
 

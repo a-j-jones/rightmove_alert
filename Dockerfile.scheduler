@@ -20,10 +20,7 @@ COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy your Python script and data files
-COPY update_script.py /app/
-COPY email_data /app/email_data
-COPY rightmove /app/rightmove
-COPY templates /app/templates
+COPY . /app/
 
 # Add a cron job
 RUN crontab -l | { echo "30 18 * * MON-SAT cd /app/ && /usr/local/bin/python /app/update_script.py >> /proc/1/fd/1 2>> /proc/1/fd/2"; } | crontab -
