@@ -16,8 +16,8 @@ from googleapiclient.discovery import build
 from jinja2 import Environment, FileSystemLoader
 from requests import HTTPError
 
+from config import BASE_DIR, BOOTSTRAP_UTIL, DATA, TEMPLATES
 from rightmove.run import get_properties
-from config import TEMPLATES, BOOTSTRAP_UTIL, BASE_DIR
 
 logger = logging.getLogger('waitress')
 
@@ -51,7 +51,8 @@ def get_service():
 
 def create_email():
     logger.info("Creating email...")
-    with open("data/email_details.json", "r") as f:
+
+    with open(os.path.join(DATA, "email_details.json"), "r") as f:
         data = json.load(f)
         logger.info(f"Recipients: {data['recipients']}")
 
