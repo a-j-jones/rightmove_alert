@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+    <div class="card">
+        <div class="card-body p-4">
+            <form method="post" action="{{ url_for('update_settings') }}">
+                <div class="form-group" id="recipientsGroup">
+                    <label for="recipients">Recipients</label>
+                    <div id="recipientList">
+                        {% for recipient in email_data['recipients'] %}
+                            <div class="input-group input-group-sm mb-2">
+                                <input type="email" class="form-control" name="recipients[]" value="{{ recipient }}"
+                                       required>
+                                <div class="input-group-text">
+                                    <button class="btn btn-outline-danger btn-sm" type="button"
+                                            onclick="removeRecipient(this)">X
+                                    </button>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-2">
+                        <button type="button" class="btn btn-primary" id="addRecipient">Add</button>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+    </div>
+    <script>
+        document.getElementById('addRecipient').addEventListener('click', function () {
+            var newInputGroup = document.createElement('div');
+            newInputGroup.className = 'input-group mb-2';
+            newInputGroup.innerHTML = '<input type="email" class="form-control" name="recipients[]" required><div class="input-group-append"><button class="btn btn-outline-danger" type="button" onclick="removeRecipient(this)">X</button></div>';
+            document.getElementById('recipientList').appendChild(newInputGroup);
+        });
+
+        function removeRecipient(button) {
+            button.closest('.input-group').remove();
+        }
+    </script>
+
+{% endblock %}

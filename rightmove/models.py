@@ -1,13 +1,12 @@
 import datetime as dt
-from os import path
 from typing import Optional
 
 from pydantic import validator
 from sqlmodel import create_engine, Field, SQLModel
 
-sqlite_file_name = "database.db"
-absolute_sqlite_file_path = path.join(path.dirname(__file__), sqlite_file_name)
-sqlite_url = f"sqlite:///{absolute_sqlite_file_path}"
+from config import SQL_PATH
+
+sqlite_url = f"sqlite:///{SQL_PATH}"
 
 
 class PropertyLocation(SQLModel, table=True):
@@ -15,7 +14,10 @@ class PropertyLocation(SQLModel, table=True):
     Model to store Property location and channel information which is obtained via the
     map search Rightmove API.
     """
-    property_id: int = Field(default=None, primary_key=True, foreign_key="propertydata.property_id")
+
+    property_id: int = Field(
+        default=None, primary_key=True, foreign_key="propertydata.property_id"
+    )
     property_asatdt: dt.datetime = Field(default=None)
     property_channel: str
     property_longitude: float
@@ -26,6 +28,7 @@ class PropertyData(SQLModel, table=True):
     """
     Model to store all Property data provided by the Rightmove API, such as property type, bedrooms, bathrooms etc.
     """
+
     property_id: int = Field(default=None, primary_key=True)
     property_validfrom: dt.datetime = Field(default=None, primary_key=True)
     property_validto: dt.datetime = Field(default=dt.datetime(9999, 12, 31))
@@ -64,7 +67,10 @@ class PropertyImages(SQLModel, table=True):
     Model to store Property location and channel information which is obtained via the
     map search Rightmove API.
     """
-    property_id: int = Field(default=None, primary_key=True, foreign_key="propertydata.property_id")
+
+    property_id: int = Field(
+        default=None, primary_key=True, foreign_key="propertydata.property_id"
+    )
     image_url: str = Field(default=None, primary_key=True)
     image_caption: Optional[str]
 
@@ -73,7 +79,10 @@ class ReviewedProperties(SQLModel, table=True):
     """
     Model to store properties that have already been considered / emailed to the customer
     """
-    property_id: int = Field(default=None, primary_key=True, foreign_key="propertydata.property_id")
+
+    property_id: int = Field(
+        default=None, primary_key=True, foreign_key="propertydata.property_id"
+    )
     reviewed_date: dt.datetime = Field(default=dt.datetime.now())
     emailed: bool = Field(default=False)
 
@@ -82,20 +91,29 @@ class ReviewDates(SQLModel, table=True):
     """
     Model to store properties that have already been considered / emailed to the customer
     """
-    reviewed_date: dt.datetime = Field(default=dt.datetime.now(), primary_key=True, foreign_key="reviewedproperties.reviewed_date")
+
+    reviewed_date: dt.datetime = Field(
+        default=dt.datetime.now(),
+        primary_key=True,
+        foreign_key="reviewedproperties.reviewed_date",
+    )
     email_id: int = Field(default=None)
     str_date: Optional[str] = Field(default=None)
 
 
 class TravelTime(SQLModel, table=True):
-    property_id: int = Field(default=None, primary_key=True, foreign_key="propertydata.property_id")
+    property_id: int = Field(
+        default=None, primary_key=True, foreign_key="propertydata.property_id"
+    )
     sub_35m: bool = Field(default=False)
     sub_40m: bool = Field(default=False)
     sub_45m: bool = Field(default=False)
 
 
 class TravelTimePrecise(SQLModel, table=True):
-    property_id: int = Field(default=None, primary_key=True, foreign_key="propertydata.property_id")
+    property_id: int = Field(
+        default=None, primary_key=True, foreign_key="propertydata.property_id"
+    )
     travel_time: int = Field(default=None)
 
 

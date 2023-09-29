@@ -82,20 +82,23 @@ def update_locations():
             result = np.logical_or(result, points_in_polygon_parallel(points, polygon))
             for hole in polygon_data["holes"]:
                 polygon = pd.DataFrame(hole).values
-                result = np.logical_and(result, ~points_in_polygon_parallel(points, polygon))
+                result = np.logical_and(
+                    result, ~points_in_polygon_parallel(points, polygon)
+                )
 
         col = int(file.stem.replace("sub_", "").replace("m", ""))
         keep_cols.append(col)
         df[col] = result
         df[int(file.stem.replace("sub_", "").replace("m", ""))] = result
 
-    df = df.melt(id_vars=["property_id"], value_vars=keep_cols, var_name="travel_time", value_name="in_polygon")
+    df = df.melt(
+        id_vars=["property_id"],
+        value_vars=keep_cols,
+        var_name="travel_time",
+        value_name="in_polygon",
+    )
     df["travel_time"] = df.travel_time.where(df.in_polygon, 999)
-    df = (df
-          .groupby("property_id")
-          .agg({"travel_time": "min"})
-          .reset_index()
-          )
+    df = df.groupby("property_id").agg({"travel_time": "min"}).reset_index()
 
     engine = create_engine(sqlite_url, echo=False)
     with Session(engine) as session:

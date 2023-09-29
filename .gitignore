@@ -1,6 +1,6 @@
 **/.idea/
-**/.sass-cache/
 **/__pycache__/
+.sass-cache/
 /venv/
 
 /shapes/*.json

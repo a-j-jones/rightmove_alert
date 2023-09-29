@@ -1,4 +1,10 @@
 {% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block navbar_right %}
+    <div class="d-flex">
+        <a class="btn btn-primary fw-semibold" href="{{ url_for('settings') }}" role="button">Settings</a>
+    </div>
+{% endblock %}
 {% block content %}
     <ul class="list-group">
         {% for item in items %}
