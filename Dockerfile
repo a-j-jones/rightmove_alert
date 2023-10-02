@@ -22,6 +22,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the app
 COPY . /app/
 
-# Use the entrypoint script to initialize the database
-ENTRYPOINT ["/app/entrypoint.sh"]
+# Run the app
 CMD ["python", "app.py"]

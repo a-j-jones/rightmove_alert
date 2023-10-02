@@ -41,4 +41,14 @@ def get_id_len():
 
 
 if __name__ == "__main__":
-    asyncio.run(get_property(127535897))
+    # asyncio.run(get_property(127535897))
+
+    import logging
+    from config.logging import logging_setup
+
+    logger = logging.getLogger(__name__)
+    logger = logging_setup(logger)
+
+    logger.info("Hello")
+
+    # send_email()

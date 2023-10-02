@@ -17,25 +17,31 @@ from jinja2 import Environment, FileSystemLoader
 from requests import HTTPError
 
 from config import BASE_DIR, BOOTSTRAP_UTIL, DATA, TEMPLATES
+from config.logging import logging_setup
 from rightmove.run import get_properties
 
-logger = logging.getLogger("waitress")
+logger = logging.getLogger(__name__)
+logger = logging_setup(logger)
 
 SCOPES = ["https://www.googleapis.com/auth/gmail.send"]
 
 
 def get_service():
     logger.info("Getting gmail credentials...")
+
     creds = None
     if os.path.exists("email_data/token.pickle"):
         with open("email_data/token.pickle", "rb") as token:
             creds = pickle.load(token)
     # If there are no (valid) credentials available, let the user log in.
+
     if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
+        try:
+            logger.info("Attempting to refresh credentials...")
             http = httplib2.Http()
             creds.refresh(Request(http))
-        else:
+        except Exception as e:
+            logger.warning("Login required...")
             flow = InstalledAppFlow.from_client_secrets_file(
                 "email_data/credentials.json", SCOPES
             )
@@ -87,12 +93,13 @@ def prepare_email_html(review_id) -> bool:
         f.write(template.render(properties=properties))
 
     if bootstrap_email_path:
-        print(f"Creating output file: {outfile}")
+        logger.info(f"Creating output file: {outfile}")
         cmd = rf'"{bootstrap_email_path}" "{infile}" > "{outfile}"'
         subprocess.run(cmd, text=True, shell=True)
     else:
-        print("bootstrap-email.bat was not found.")
-        logger.error("bootstrap-email.bat was not found.")
+        logger.error(f"'{BOOTSTRAP_UTIL}' was not found in path:")
+        for path in os.environ["PATH"].split(os.pathsep):
+            logger.error(f"{path}")
         return False
 
     return True

@@ -1,48 +1,42 @@
-import asyncio
 import logging
 
 from sqlmodel import create_engine, select, Session
 
 from app import count_new_properties
+from config.logging import logging_setup
 from email_data.send_email import prepare_email_html, send_email
 from rightmove.geolocation import update_locations
 from rightmove.models import ReviewDates, sqlite_url
 from rightmove.run import (
-    download_properties,
-    download_property_data,
     mark_properties_reviewed,
 )
 
 logger = logging.getLogger(__name__)
-sh = logging.StreamHandler()
-sh.setLevel(logging.INFO)
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-sh.setFormatter(formatter)
-logger.addHandler(sh)
+logger = logging_setup(logger)
 
 
 def main():
     # Download the latest properties and data:
-    print("Downloading properties and data...")
-    asyncio.run(download_properties("BUY"))
-    asyncio.run(download_property_data(update=False))
+    logger.info("Downloading properties and data...")
+    # asyncio.run(download_properties("BUY"))
+    # asyncio.run(download_property_data(update=False))
 
     # Update geolocation data:
-    print("Updating geolocation data...")
+    logger.info("Updating geolocation data...")
     update_locations()
 
-    print("Getting number of new properties...")
+    logger.info("Getting number of new properties...")
     count = count_new_properties()
     if count == 0:
-        print("No new properties found.")
+        logger.warning("No new properties found.")
         return
 
     # Mark properties as reviewed:
-    print("Marking properties as reviewed...")
+    logger.info("Marking properties as reviewed...")
     mark_properties_reviewed()
 
     # Send email:
-    print("Creating email...")
+    logger.info("Creating email...")
     engine = create_engine(sqlite_url, echo=False)
     query = (
         select([ReviewDates.email_id]).order_by(ReviewDates.email_id.desc()).limit(1)
@@ -52,7 +46,7 @@ def main():
 
     if email_id:
         if prepare_email_html(email_id):
-            print("Sending email...")
+            logger.info("Sending email...")
             send_email()
 
 

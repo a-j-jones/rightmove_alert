@@ -16,6 +16,7 @@ from flask import (
 from sqlmodel import create_engine, Session
 
 from config import DATA, IS_WINDOWS
+from config.logging import logging_setup
 from email_data.send_email import prepare_email_html, send_email
 from rightmove.geolocation import update_locations
 from rightmove.models import sqlite_url
@@ -28,8 +29,11 @@ from rightmove.run import (
 
 app = Flask(__name__)
 
-logger = logging.getLogger("waitress")
-logger.setLevel(logging.INFO)
+wlogger = logging.getLogger("waitress")
+wlogger = logging_setup(wlogger)
+
+logger = logging.getLogger(__name__)
+logger = logging_setup(logger)
 
 
 @app.route("/favicon.ico")
