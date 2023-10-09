@@ -27,34 +27,32 @@ SCOPES = ["https://www.googleapis.com/auth/gmail.send"]
 
 
 def get_service():
-    logger.info("Getting gmail credentials...")
+    logger.info("Getting gmail credentials")
 
     creds = None
     if os.path.exists("email_data/token.pickle"):
         with open("email_data/token.pickle", "rb") as token:
             creds = pickle.load(token)
-    # If there are no (valid) credentials available, let the user log in.
 
-    if not creds or not creds.valid:
-        try:
-            logger.info("Attempting to refresh credentials...")
-            http = httplib2.Http()
-            creds.refresh(Request(http))
-        except Exception as e:
-            logger.warning("Login required...")
-            flow = InstalledAppFlow.from_client_secrets_file(
-                "email_data/credentials.json", SCOPES
-            )
-            creds = flow.run_local_server(port=0)
-        # Save the credentials for the next run
-        with open("email_data/token.pickle", "wb") as token:
-            pickle.dump(creds, token)
+    try:
+        logger.info("Attempting to refresh credentials")
+        http = httplib2.Http()
+        creds.refresh(Request(http))
+    except Exception as e:
+        logger.warning("Login required")
+        flow = InstalledAppFlow.from_client_secrets_file(
+            "email_data/credentials.json", SCOPES
+        )
+        creds = flow.run_local_server(port=0)
+
+    with open("email_data/token.pickle", "wb") as token:
+        pickle.dump(creds, token)
 
     return build("gmail", "v1", credentials=creds)
 
 
 def create_email():
-    logger.info("Creating email...")
+    logger.info("Creating email")
 
     with open(os.path.join(DATA, "email_details.json"), "r") as f:
         data = json.load(f)
@@ -83,7 +81,7 @@ def prepare_email_html(review_id) -> bool:
     outfile = Path(BASE_DIR, "email_data", "bootstrap.html")
 
     # Render jinja2 template:
-    logger.info("Rendering template...")
+    logger.info("Rendering template")
 
     env = Environment(loader=FileSystemLoader(TEMPLATES))
     bootstrap_email_path = shutil.which(BOOTSTRAP_UTIL)
@@ -116,3 +114,7 @@ def send_email():
         logger.info(f'sent message to {message} Message Id: {message["id"]}')
     except HTTPError as error:
         logger.info(f"An error occurred: {error}")
+
+
+if __name__ == "__main__":
+    send_email()
