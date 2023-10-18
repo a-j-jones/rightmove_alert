@@ -10,6 +10,7 @@ from email.mime.text import MIMEText
 from pathlib import Path
 
 import httplib2
+from google.oauth2.credentials import Credentials
 from google_auth_httplib2 import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
@@ -30,22 +31,23 @@ def get_service():
     logger.info("Getting gmail credentials")
 
     creds = None
-    if os.path.exists("email_data/token.pickle"):
-        with open("email_data/token.pickle", "rb") as token:
-            creds = pickle.load(token)
+    token_path = os.path.join(DATA, "token.pickle")
+    if os.path.exists(token_path):
+        with open(token_path, "rb") as token:
+            creds: Credentials = pickle.load(token)
 
     try:
         logger.info("Attempting to refresh credentials")
         http = httplib2.Http()
         creds.refresh(Request(http))
     except Exception as e:
-        logger.warning("Login required")
+        logger.warning(f"Login required {e}")
         flow = InstalledAppFlow.from_client_secrets_file(
             "email_data/credentials.json", SCOPES
         )
         creds = flow.run_local_server(port=0)
 
-    with open("email_data/token.pickle", "wb") as token:
+    with open(token_path, "wb") as token:
         pickle.dump(creds, token)
 
     return build("gmail", "v1", credentials=creds)
