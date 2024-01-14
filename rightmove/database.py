@@ -1,6 +1,6 @@
 import datetime as dt
 import re
-from typing import List
+from typing import List, Set
 
 import pandas as pd
 import psycopg2
@@ -13,6 +13,22 @@ class RightmoveDatabase:
     def __init__(self, sqlite_url):
         self.engine = create_engine(sqlite_url, echo=False)
         self.conn = psycopg2.connect(sqlite_url)
+
+    def _close_missing_properties(self, missing_ids: Set[int]) -> None:
+        """
+        Closes the validto variable for properties which are no longer on the Rightmove website.
+        :param ids:     List            A list of expected IDs which were sent in the API request.
+        """
+        cursor = self.conn.cursor()
+        current_time = dt.datetime.now()
+
+        cursor.execute(
+            f"""
+            UPDATE propertydata
+            SET property_validto = '{current_time}'
+            WHERE property_id IN ({','.join([str(id) for id in missing_ids])})
+        """
+        )
 
     def get_id_len(self, update, channel, update_cutoff=None):
         """
@@ -155,23 +171,13 @@ class RightmoveDatabase:
         :param ids:     List            A list of expected IDs which were sent in the API request.
         """
         with Session(self.engine) as session:
-            found_ids = [p["id"] for p in data]
-            for id in ids:
-                # Check each ID which was searched for, if there was no information return then we assume that
-                # the property has been removed from the Rightmove website, and end the property's validto variable.
-                if id not in found_ids:
-                    current_time = dt.datetime.now()
-                    statement = (
-                        select(PropertyData)
-                        .where(PropertyData.property_id == id)
-                        .where(PropertyData.property_validto >= dt.datetime.now())
-                    )
-                    results = session.exec(statement)
-                    existing_record = results.first()
-                    if existing_record:
-                        existing_record.property_validto = current_time
-                        session.add(existing_record)
-                        session.commit()
+            found_ids = set([p["id"] for p in data])
+            searched_ids = set(ids)
+
+            # Set validto for properties which are no longer on the Rightmove website:
+            missing_ids = searched_ids - found_ids
+            if len(missing_ids) > 0:
+                self._close_missing_properties(missing_ids)
 
             # Loop through each property which was returned by the request:
             for prop in data:
