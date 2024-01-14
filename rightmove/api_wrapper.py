@@ -1,3 +1,4 @@
+import logging
 from functools import lru_cache
 from json import JSONDecodeError
 from textwrap import wrap
@@ -6,6 +7,11 @@ from typing import Optional
 import httpx
 import requests
 from tqdm.asyncio import tqdm
+
+from config.logging import logging_setup
+
+logger = logging.getLogger(__name__)
+logger = logging_setup(logger)
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -40,6 +46,10 @@ class Rightmove:
         region_search = region_search.upper()
         url = f'https://www.rightmove.co.uk/typeAhead/uknostreet/{"/".join(wrap(region_search, 2))}/'
         r = requests.get(url, headers=HEADERS)
+        if r.status_code != 200:
+            logger.debug("Region search failed.")
+            return ""
+
         region_data = r.json()
 
         return region_data["typeAheadLocations"][0]["locationIdentifier"]
@@ -164,7 +174,9 @@ class Rightmove:
         r = await self.client.get(
             "https://www.rightmove.co.uk/api/_mapSearch", params=params, headers=HEADERS
         )
+
         if r.status_code != 200:
+            logger.debug("Map search failed.")
             return {"properties": []}
 
         data = r.json()
@@ -196,6 +208,10 @@ class Rightmove:
             params=params,
             headers=HEADERS,
         )
+
+        if r.status_code != 200:
+            logger.debug("Property data search failed.")
+            return {"properties": []}
 
         try:
             data = r.json()["properties"]
