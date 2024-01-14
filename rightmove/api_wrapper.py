@@ -7,6 +7,10 @@ import httpx
 import requests
 from tqdm.asyncio import tqdm
 
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+}
+
 
 class Rightmove:
     def __init__(self, database):
@@ -35,7 +39,7 @@ class Rightmove:
         """
         region_search = region_search.upper()
         url = f'https://www.rightmove.co.uk/typeAhead/uknostreet/{"/".join(wrap(region_search, 2))}/'
-        r = requests.get(url)
+        r = requests.get(url, headers=HEADERS)
         region_data = r.json()
 
         return region_data["typeAheadLocations"][0]["locationIdentifier"]
@@ -141,23 +145,24 @@ class Rightmove:
             params["dontShow"] = ",".join(exclude)
 
         if include:
+            valid_inclusions = [
+                "garden",
+                "parking",
+                "newHome",
+                "retirement",
+                "sharedOwnership",
+                "auction",
+            ]
             for item in include:
-                valid_inclusions = [
-                    "garden",
-                    "parking",
-                    "newHome",
-                    "retirement",
-                    "sharedOwnership",
-                    "auction",
-                ]
-            if item not in valid_inclusions:
-                raise ValueError(
-                    f"Valid options for include are {valid_inclusions}, got: {item}"
-                )
+                if item not in valid_inclusions:
+                    raise ValueError(
+                        f"Valid options for include are {valid_inclusions}, got: {item}"
+                    )
+
             params["dontShow"] = ",".join(include)
 
         r = await self.client.get(
-            "https://www.rightmove.co.uk/api/_mapSearch", params=params
+            "https://www.rightmove.co.uk/api/_mapSearch", params=params, headers=HEADERS
         )
         data = r.json()
 
@@ -184,7 +189,9 @@ class Rightmove:
 
         params = {"channel": channel.upper(), "propertyIds": ids, "viewType": "MAP"}
         r = await self.client.get(
-            "https://www.rightmove.co.uk/api/_searchByIds", params=params
+            "https://www.rightmove.co.uk/api/_searchByIds",
+            params=params,
+            headers=HEADERS,
         )
 
         try:

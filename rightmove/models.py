@@ -117,7 +117,7 @@ class TravelTimePrecise(SQLModel, table=True):
     travel_time: int = Field(default=None)
 
 
-if __name__ == "__main__":
+def create_models():
+    print(sqlite_url)
     engine = create_engine(sqlite_url, echo=False)
-    # SQLModel.metadata.drop_all(engine)
     SQLModel.metadata.create_all(engine)

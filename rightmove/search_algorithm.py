@@ -5,8 +5,8 @@ from typing import Optional
 import numpy as np
 from tqdm.asyncio import tqdm
 
-from rightmove.database import RightmoveDatabase
 from rightmove.api_wrapper import Rightmove
+from rightmove.database import RightmoveDatabase
 
 
 class RightmoveSearcher:

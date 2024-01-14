@@ -1,13 +1,16 @@
 import asyncio
 import logging
+import os
+import sqlite3
 
 from sqlmodel import create_engine, select, Session
 
 from app import count_new_properties
+from config import DATA, SQL_PATH
 from config.logging import logging_setup
 from email_data.send_email import prepare_email_html, send_email
 from rightmove.geolocation import update_locations
-from rightmove.models import ReviewDates, sqlite_url
+from rightmove.models import ReviewDates, sqlite_url, create_models
 from rightmove.run import (
     download_properties,
     download_property_data,
@@ -18,7 +21,23 @@ logger = logging.getLogger(__name__)
 logger = logging_setup(logger)
 
 
+def create_database():
+    create_models()
+    with open(os.path.join(DATA, "views.sql")) as f:
+        sql = f.read()
+
+    conn = sqlite3.connect(SQL_PATH)
+    c = conn.cursor()
+    c.execute(sql)
+    conn.commit()
+    conn.close()
+
+
 def main():
+    if not os.path.exists(SQL_PATH):
+        logger.info("Creating database...")
+        create_database()
+
     # Download the latest properties and data:
     logger.info("Downloading properties and data...")
     asyncio.run(download_properties("BUY"))
