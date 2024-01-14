@@ -164,12 +164,15 @@ class Rightmove:
         r = await self.client.get(
             "https://www.rightmove.co.uk/api/_mapSearch", params=params, headers=HEADERS
         )
+        if r.status_code != 200:
+            return {"properties": []}
+
         data = r.json()
 
         if load_sql:
             self.database.load_map_properties(data, channel=channel)
 
-        return r.json()
+        return data
 
     async def get_property_data(
         self, channel: str, ids: list[int], progress: tqdm = None

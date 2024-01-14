@@ -1,5 +1,3 @@
-import asyncio
-
 from rightmove.api_wrapper import Rightmove
 from rightmove.database import RightmoveDatabase
 from rightmove.models import database_uri
@@ -34,6 +32,19 @@ async def test_get_property_data():
         assert len(property_data) == 1
 
 
-asyncio.run(test_get_region())
-asyncio.run(test_get_properties())
-asyncio.run(test_get_property_data())
+def test_database():
+    database = RightmoveDatabase(database_uri)
+
+    data = {
+        "properties": [
+            {"id": 00000000, "location": {"latitude": 51.0000, "longitude": 0.0000}}
+        ]
+    }
+    database.load_map_properties(data=data, channel="BUY")
+
+
+# asyncio.run(test_get_region())
+# asyncio.run(test_get_properties())
+# asyncio.run(test_get_property_data())
+
+test_database()

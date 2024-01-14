@@ -3,14 +3,16 @@ import re
 from typing import List
 
 import pandas as pd
+import psycopg2
 from sqlmodel import create_engine, select, Session
 
-from rightmove.models import PropertyData, PropertyImages, PropertyLocation
+from rightmove.models import PropertyData, PropertyImages
 
 
 class RightmoveDatabase:
     def __init__(self, sqlite_url):
         self.engine = create_engine(sqlite_url, echo=False)
+        self.conn = psycopg2.connect(sqlite_url)
 
     def get_id_len(self, update, channel, update_cutoff=None):
         """
@@ -95,20 +97,56 @@ class RightmoveDatabase:
         :param data:    Dictionary      JSON response from the Rightmove API.
         :param channel  String          The channel which searched for in the API.
         """
-        with Session(self.engine) as session:
-            properties = data["properties"]
-            for property_data in properties:
-                if not session.get(PropertyLocation, property_data["id"]):
-                    p = PropertyLocation(
-                        property_id=property_data["id"],
-                        property_asatdt=dt.datetime.now(),
-                        property_channel=channel.upper(),
-                        property_latitude=property_data["location"]["latitude"],
-                        property_longitude=property_data["location"]["longitude"],
-                    )
-                    session.add(p)
+        cursor = self.conn.cursor()
 
-            session.commit()
+        current_time = dt.datetime.now()
+        channel = channel.upper()
+        properties = data["properties"]
+
+        # Check for existing IDs in the database:
+        ids = [p["id"] for p in properties]
+        if len(ids) == 0:
+            cursor.close()
+            return
+
+        cursor.execute(
+            f"""
+            SELECT property_id 
+            FROM propertylocation 
+            WHERE property_id IN ({','.join([str(p['id']) for p in properties])})"""
+        )
+        existing_ids = [r[0] for r in cursor.fetchall()]
+
+        insert_values = []
+        for property_data in properties:
+            if property_data["id"] in existing_ids:
+                continue
+
+            insert_values.append(
+                (
+                    property_data["id"],
+                    current_time,
+                    channel,
+                    property_data["location"]["latitude"],
+                    property_data["location"]["longitude"],
+                )
+            )
+
+        if len(insert_values) > 0:
+            cursor.executemany(
+                """
+                INSERT INTO propertylocation (
+                    property_id,
+                    property_asatdt,
+                    property_channel,
+                    property_latitude,
+                    property_longitude
+                ) VALUES (%s, %s, %s, %s, %s)
+                """,
+                insert_values,
+            )
+            self.conn.commit()
+            cursor.close()
 
     def load_property_data(self, data: dict, ids: list[int]) -> None:
         """

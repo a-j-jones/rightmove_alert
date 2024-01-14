@@ -12,6 +12,7 @@ from email_data.send_email import prepare_email_html, send_email
 from rightmove.geolocation import update_locations
 from rightmove.models import ReviewDates, database_uri, create_models
 from rightmove.run import (
+    download_properties,
     download_property_data,
     mark_properties_reviewed,
 )
@@ -39,7 +40,7 @@ def main():
 
     # Download the latest properties and data:
     logger.info("Downloading properties and data...")
-    # asyncio.run(download_properties("BUY"))
+    asyncio.run(download_properties("BUY"))
     asyncio.run(download_property_data(update=False))
 
     # Update geolocation data:
