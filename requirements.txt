@@ -3,6 +3,7 @@ numpy
 pandas
 requests
 sqlmodel
+psycopg2
 tqdm
 numba
 flask

@@ -19,7 +19,7 @@ from config import DATA, IS_WINDOWS
 from config.logging import logging_setup
 from email_data.send_email import prepare_email_html, send_email
 from rightmove.geolocation import update_locations
-from rightmove.models import sqlite_url
+from rightmove.models import database_uri
 from rightmove.run import (
     download_properties,
     download_property_data,
@@ -47,7 +47,7 @@ def favicon():
 
 @app.route("/")
 def index():
-    engine = create_engine(sqlite_url, echo=False)
+    engine = create_engine(database_uri, echo=False)
 
     # Get review dates:
     sql = "select distinct email_id, str_date from reviewdates order by email_id desc"
@@ -114,7 +114,7 @@ def delete_review():
     data = request.args.to_dict()
     review_id = data.get("id")
 
-    engine = create_engine(sqlite_url, echo=False)
+    engine = create_engine(database_uri, echo=False)
     with Session(engine) as session:
         date = session.exec(
             f"select reviewed_date from reviewdates where email_id={review_id}"
@@ -150,7 +150,7 @@ def update_settings():
 
 
 def count_new_properties() -> str:
-    engine = create_engine(sqlite_url, echo=False)
+    engine = create_engine(database_uri, echo=False)
     # Get count of new properties:
     sql = "select count(*) from alert_properties where travel_time < 45 and review_id is null"
     count_props = pd.read_sql(sql, engine).values[0][0]

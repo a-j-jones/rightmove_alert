@@ -4,9 +4,7 @@ from typing import Optional
 from pydantic import validator
 from sqlmodel import create_engine, Field, SQLModel
 
-from config import SQL_PATH
-
-sqlite_url = f"sqlite:///{SQL_PATH}"
+database_uri = "postgresql://root:root@localhost:5432/rightmove"
 
 
 class PropertyLocation(SQLModel, table=True):
@@ -16,7 +14,8 @@ class PropertyLocation(SQLModel, table=True):
     """
 
     property_id: int = Field(
-        default=None, primary_key=True, foreign_key="propertydata.property_id"
+        default=None,
+        primary_key=True,
     )
     property_asatdt: dt.datetime = Field(default=None)
     property_channel: str
@@ -69,7 +68,8 @@ class PropertyImages(SQLModel, table=True):
     """
 
     property_id: int = Field(
-        default=None, primary_key=True, foreign_key="propertydata.property_id"
+        default=None,
+        primary_key=True,
     )
     image_url: str = Field(default=None, primary_key=True)
     image_caption: Optional[str]
@@ -81,7 +81,8 @@ class ReviewedProperties(SQLModel, table=True):
     """
 
     property_id: int = Field(
-        default=None, primary_key=True, foreign_key="propertydata.property_id"
+        default=None,
+        primary_key=True,
     )
     reviewed_date: dt.datetime = Field(default=dt.datetime.now())
     emailed: bool = Field(default=False)
@@ -95,7 +96,6 @@ class ReviewDates(SQLModel, table=True):
     reviewed_date: dt.datetime = Field(
         default=dt.datetime.now(),
         primary_key=True,
-        foreign_key="reviewedproperties.reviewed_date",
     )
     email_id: int = Field(default=None)
     str_date: Optional[str] = Field(default=None)
@@ -103,7 +103,8 @@ class ReviewDates(SQLModel, table=True):
 
 class TravelTime(SQLModel, table=True):
     property_id: int = Field(
-        default=None, primary_key=True, foreign_key="propertydata.property_id"
+        default=None,
+        primary_key=True,
     )
     sub_35m: bool = Field(default=False)
     sub_40m: bool = Field(default=False)
@@ -112,12 +113,17 @@ class TravelTime(SQLModel, table=True):
 
 class TravelTimePrecise(SQLModel, table=True):
     property_id: int = Field(
-        default=None, primary_key=True, foreign_key="propertydata.property_id"
+        default=None,
+        primary_key=True,
     )
     travel_time: int = Field(default=None)
 
 
 def create_models():
-    print(sqlite_url)
-    engine = create_engine(sqlite_url, echo=False)
+    print(database_uri)
+    engine = create_engine(database_uri, echo=False)
     SQLModel.metadata.create_all(engine)
+
+
+if __name__ == "__main__":
+    create_models()

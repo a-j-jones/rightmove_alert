@@ -8,7 +8,7 @@ import pandas as pd
 from numba import njit
 from sqlmodel import create_engine, Session
 
-from rightmove.models import sqlite_url, TravelTimePrecise
+from rightmove.models import database_uri, TravelTimePrecise
 
 
 @njit()
@@ -63,7 +63,7 @@ def update_locations():
     """
     Updates the locations with the travel time data
     """
-    engine = create_engine(sqlite_url, echo=False)
+    engine = create_engine(database_uri, echo=False)
     sql = "SELECT * FROM alert_properties where not travel_reviewed"
     df = pd.read_sql(sql, engine)
 
@@ -100,7 +100,7 @@ def update_locations():
     df["travel_time"] = df.travel_time.where(df.in_polygon, 999)
     df = df.groupby("property_id").agg({"travel_time": "min"}).reset_index()
 
-    engine = create_engine(sqlite_url, echo=False)
+    engine = create_engine(database_uri, echo=False)
     with Session(engine) as session:
         for index, row in df.iterrows():
             ttp = TravelTimePrecise(**row.to_dict())

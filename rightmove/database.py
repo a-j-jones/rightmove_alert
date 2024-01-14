@@ -3,7 +3,7 @@ import re
 from typing import List
 
 import pandas as pd
-from sqlmodel import create_engine, distinct, func, or_, select, Session
+from sqlmodel import create_engine, select, Session
 
 from rightmove.models import PropertyData, PropertyImages, PropertyLocation
 
@@ -24,24 +24,26 @@ class RightmoveDatabase:
         """
         with Session(self.engine) as session:
             current_time = dt.datetime.now()
-            statement = (
-                select(func.count(distinct(PropertyLocation.property_id)))
-                .join(PropertyData, isouter=True)
-                .where(PropertyLocation.property_channel == channel)
-            )
+            sql = f"""
+                    SELECT COUNT(DISTINCT pl.property_id)
+                    FROM propertylocation pl
+                    LEFT JOIN propertydata pd ON pl.property_id = pd.property_id
+                    WHERE pl.property_channel = '{channel}'
+                """
             if update:
                 if update_cutoff:
-                    statement = statement.where(
-                        or_(
-                            PropertyData.last_update < update_cutoff,
-                            PropertyData.last_update == None,
-                        )
-                    ).where(PropertyData.property_validto >= current_time)
+                    sql += f"""
+                                    AND (
+                                        (pd.last_update < '{update_cutoff}' OR pd.last_update IS NULL)
+                                        AND pd.property_validto >= '{current_time}'
+                                        OR pd.property_id IS NULL
+                                    )
+                                """
             else:
-                statement = statement.where(PropertyData.property_id == None)
+                sql += "AND pd.property_id IS NULL"
 
-            results = session.exec(statement)
-            return results.first()
+            results = session.exec(sql)
+            return results.first()[0]
 
     def get_id_list(self, update: bool, channel: str, update_cutoff=None) -> List[int]:
         """
@@ -56,26 +58,31 @@ class RightmoveDatabase:
         """
         with Session(self.engine) as session:
             current_time = dt.datetime.now()
-            statement = (
-                select(PropertyLocation.property_id)
-                .join(PropertyData, isouter=True)
-                .where(PropertyLocation.property_channel == channel)
-            )
+
+            sql = f"""
+                SELECT pl.property_id
+                FROM propertylocation pl
+                LEFT JOIN propertydata pd ON pl.property_id = pd.property_id
+                WHERE pl.property_channel = '{channel}'
+            """
+
             if update:
                 if update_cutoff:
-                    statement = statement.where(
-                        or_(
-                            PropertyData.last_update < update_cutoff,
-                            PropertyData.last_update == None,
+                    sql += f"""
+                        AND (
+                            (pd.last_update < '{update_cutoff}' OR pd.last_update IS NULL)
+                            AND pd.property_validto >= '{current_time}'
+                            OR pd.property_id IS NULL
                         )
-                    ).where(PropertyData.property_validto >= current_time)
-            else:
-                statement = statement.where(PropertyData.property_id == None)
+                    """
 
-            results = session.exec(statement)
+            else:
+                sql += "AND pd.property_id IS NULL"
+
+            results = session.exec(sql)
             ids = []
             for result in results.unique():
-                ids.append(result)
+                ids.append(result[0])
                 if len(ids) == 25:
                     yield ids
                     ids = []

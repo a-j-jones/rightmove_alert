@@ -2,18 +2,18 @@ import asyncio
 
 from rightmove.api_wrapper import Rightmove
 from rightmove.database import RightmoveDatabase
-from rightmove.models import sqlite_url
+from rightmove.models import database_uri
 
 
 async def test_get_region():
-    database = RightmoveDatabase(sqlite_url)
+    database = RightmoveDatabase(database_uri)
     async with Rightmove(database) as rightmove:
         region = rightmove.get_region("LONDON")
         assert region == "REGION^87490"
 
 
 async def test_get_properties():
-    database = RightmoveDatabase(sqlite_url)
+    database = RightmoveDatabase(database_uri)
     async with Rightmove(database) as rightmove:
         properties = await rightmove.get_properties(
             region_search="LONDON",
@@ -28,7 +28,7 @@ async def test_get_properties():
 
 
 async def test_get_property_data():
-    database = RightmoveDatabase(sqlite_url)
+    database = RightmoveDatabase(database_uri)
     async with Rightmove(database) as rightmove:
         property_data = await rightmove.get_property_data("BUY", [143206301])
         assert len(property_data) == 1

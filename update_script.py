@@ -10,9 +10,8 @@ from config import DATA, SQL_PATH
 from config.logging import logging_setup
 from email_data.send_email import prepare_email_html, send_email
 from rightmove.geolocation import update_locations
-from rightmove.models import ReviewDates, sqlite_url, create_models
+from rightmove.models import ReviewDates, database_uri, create_models
 from rightmove.run import (
-    download_properties,
     download_property_data,
     mark_properties_reviewed,
 )
@@ -34,13 +33,13 @@ def create_database():
 
 
 def main():
-    if not os.path.exists(SQL_PATH):
-        logger.info("Creating database...")
-        create_database()
+    # if not os.path.exists(SQL_PATH):
+    #     logger.info("Creating database...")
+    #     create_database()
 
     # Download the latest properties and data:
     logger.info("Downloading properties and data...")
-    asyncio.run(download_properties("BUY"))
+    # asyncio.run(download_properties("BUY"))
     asyncio.run(download_property_data(update=False))
 
     # Update geolocation data:
@@ -59,7 +58,7 @@ def main():
 
     # Send email:
     logger.info("Creating email...")
-    engine = create_engine(sqlite_url, echo=False)
+    engine = create_engine(database_uri, echo=False)
     query = (
         select([ReviewDates.email_id]).order_by(ReviewDates.email_id.desc()).limit(1)
     )

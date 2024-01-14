@@ -6,13 +6,13 @@ from sqlmodel import create_engine, Session
 
 from rightmove.api_wrapper import Rightmove
 from rightmove.database import RightmoveDatabase
-from rightmove.models import ReviewDates, ReviewedProperties, sqlite_url
+from rightmove.models import ReviewDates, ReviewedProperties, database_uri
 from rightmove.search_algorithm import RightmoveSearcher
 
 
 async def download_properties(channel):
     # Initialise objects
-    database = RightmoveDatabase(sqlite_url)
+    database = RightmoveDatabase(database_uri)
     async with Rightmove(database=database) as rightmove_api:
         searcher = RightmoveSearcher(rightmove_api=rightmove_api, database=database)
         task = searcher.get_all_properties(
@@ -39,7 +39,7 @@ async def download_properties(channel):
 
 async def download_property_data(update, cutoff=None):
     # Initialise objects
-    database = RightmoveDatabase(sqlite_url)
+    database = RightmoveDatabase(database_uri)
 
     async with Rightmove(database=database) as rightmove_api:
         searcher = RightmoveSearcher(rightmove_api=rightmove_api, database=database)
@@ -54,7 +54,7 @@ async def download_property_data(update, cutoff=None):
 
 
 def mark_properties_reviewed():
-    engine = create_engine(sqlite_url, echo=False)
+    engine = create_engine(database_uri, echo=False)
     property_ids = pd.read_sql(
         "SELECT property_id FROM alert_properties where not property_reviewed", engine
     )
@@ -95,7 +95,7 @@ def get_properties(sql_filter):
     """
 
     # Reading data from CSV
-    engine = create_engine(sqlite_url, echo=False)
+    engine = create_engine(database_uri, echo=False)
     df = pd.read_sql(sql, engine)
 
     properties = []
