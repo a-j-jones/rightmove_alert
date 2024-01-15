@@ -1,13 +1,12 @@
 import datetime as dt
 from typing import Optional
 
-from pydantic import validator
-from sqlmodel import create_engine, Field, SQLModel
+from pydantic import validator, BaseModel, Field
 
 database_uri = "postgresql://root:root@localhost:5432/rightmove"
 
 
-class PropertyLocation(SQLModel, table=True):
+class PropertyLocation(BaseModel):
     """
     Model to store Property location and channel information which is obtained via the
     map search Rightmove API.
@@ -23,7 +22,7 @@ class PropertyLocation(SQLModel, table=True):
     property_latitude: float
 
 
-class PropertyData(SQLModel, table=True):
+class PropertyData(BaseModel):
     """
     Model to store all Property data provided by the Rightmove API, such as property type, bedrooms, bathrooms etc.
     """
@@ -61,7 +60,7 @@ class PropertyData(SQLModel, table=True):
         return v or 0
 
 
-class PropertyImages(SQLModel, table=True):
+class PropertyImages(BaseModel):
     """
     Model to store Property location and channel information which is obtained via the
     map search Rightmove API.
@@ -75,7 +74,7 @@ class PropertyImages(SQLModel, table=True):
     image_caption: Optional[str]
 
 
-class ReviewedProperties(SQLModel, table=True):
+class ReviewedProperties(BaseModel):
     """
     Model to store properties that have already been considered / emailed to the customer
     """
@@ -88,7 +87,7 @@ class ReviewedProperties(SQLModel, table=True):
     emailed: bool = Field(default=False)
 
 
-class ReviewDates(SQLModel, table=True):
+class ReviewDates(BaseModel):
     """
     Model to store properties that have already been considered / emailed to the customer
     """
@@ -101,7 +100,7 @@ class ReviewDates(SQLModel, table=True):
     str_date: Optional[str] = Field(default=None)
 
 
-class TravelTime(SQLModel, table=True):
+class TravelTime(BaseModel):
     property_id: int = Field(
         default=None,
         primary_key=True,
@@ -111,19 +110,9 @@ class TravelTime(SQLModel, table=True):
     sub_45m: bool = Field(default=False)
 
 
-class TravelTimePrecise(SQLModel, table=True):
+class TravelTimePrecise(BaseModel):
     property_id: int = Field(
         default=None,
         primary_key=True,
     )
     travel_time: int = Field(default=None)
-
-
-def create_models():
-    print(database_uri)
-    engine = create_engine(database_uri, echo=False)
-    SQLModel.metadata.create_all(engine)
-
-
-if __name__ == "__main__":
-    create_models()

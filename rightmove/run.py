@@ -2,11 +2,11 @@ import asyncio
 import datetime as dt
 
 import pandas as pd
-from sqlmodel import create_engine, Session
+import psycopg2
 
 from rightmove.api_wrapper import Rightmove
-from rightmove.database import RightmoveDatabase
-from rightmove.models import ReviewDates, ReviewedProperties, database_uri
+from rightmove.database import RightmoveDatabase, model_executemany, model_execute
+from rightmove.models import database_uri, ReviewDates, ReviewedProperties
 from rightmove.search_algorithm import RightmoveSearcher
 
 
@@ -54,36 +54,38 @@ async def download_property_data(update, cutoff=None):
 
 
 def mark_properties_reviewed():
-    engine = create_engine(database_uri, echo=False)
+    conn = psycopg2.connect(database_uri)
+    conn.autocommit = False
+
     property_ids = pd.read_sql(
-        "SELECT property_id FROM alert_properties where not property_reviewed", engine
+        "SELECT property_id FROM alert_properties where not property_reviewed", conn
     )
     review_id = (
-        pd.read_sql("select max(email_id) as last_id from reviewdates", engine).last_id[
-            0
-        ]
+        pd.read_sql("select max(email_id) as last_id from reviewdates", conn).last_id[0]
         + 1
     )
 
-    with Session(engine) as session:
-        review_date = dt.datetime.now()
-        if len(property_ids) > 0:
-            session.add(
-                ReviewDates(
-                    email_id=review_id,
-                    reviewed_date=review_date,
-                    str_date=review_date.strftime("%d-%b-%Y"),
-                )
-            )
+    cursor = conn.cursor()
+    review_date = dt.datetime.now()
+    review = ReviewDates(
+        email_id=review_id,
+        reviewed_date=review_date,
+        str_date=review_date.strftime("%d-%b-%Y"),
+    )
+    if len(property_ids) > 0:
+        model_execute(cursor, table_name="reviewdates", value=review)
 
-        for id in property_ids.property_id.unique():
-            session.add(
-                ReviewedProperties(
-                    property_id=id, reviewed_date=review_date, emailed=False
-                )
-            )
+    values = [
+        ReviewedProperties(
+            property_id=property_id, reviewed_date=review_id, emailed=False
+        )
+        for property_id in property_ids.property_id.unique()
+    ]
+    model_executemany(cursor, table_name="reviewedproperties", values=values)
 
-        session.commit()
+    conn.commit()
+    cursor.close()
+    conn.close()
 
 
 def get_properties(sql_filter):
@@ -95,8 +97,8 @@ def get_properties(sql_filter):
     """
 
     # Reading data from CSV
-    engine = create_engine(database_uri, echo=False)
-    df = pd.read_sql(sql, engine)
+    conn = psycopg2.connect(database_uri)
+    df = pd.read_sql(sql, conn)
 
     properties = []
     for index, property in df.iterrows():

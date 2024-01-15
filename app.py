@@ -4,6 +4,7 @@ import logging
 import os
 
 import pandas as pd
+import psycopg2
 import waitress
 from flask import (
     Flask,
@@ -13,7 +14,6 @@ from flask import (
     send_from_directory,
     url_for,
 )
-from sqlmodel import create_engine, Session
 
 from config import DATA, IS_WINDOWS
 from config.logging import logging_setup
@@ -47,11 +47,11 @@ def favicon():
 
 @app.route("/")
 def index():
-    engine = create_engine(database_uri, echo=False)
+    conn = psycopg2.connect(database_uri)
 
     # Get review dates:
     sql = "select distinct email_id, str_date from reviewdates order by email_id desc"
-    items = pd.read_sql(sql, engine).to_records()
+    items = pd.read_sql(sql, conn).to_records()
 
     new_properties = count_new_properties()
 
@@ -114,14 +114,16 @@ def delete_review():
     data = request.args.to_dict()
     review_id = data.get("id")
 
-    engine = create_engine(database_uri, echo=False)
-    with Session(engine) as session:
-        date = session.exec(
-            f"select reviewed_date from reviewdates where email_id={review_id}"
-        ).first()[0]
-        session.exec(f"delete from reviewdates where email_id={review_id}")
-        session.exec(f"delete from reviewedproperties where reviewed_date='{date}'")
-        session.commit()
+    conn = psycopg2.connect(database_uri)
+    cursor = conn.cursor()
+
+    cursor.exec(f"select reviewed_date from reviewdates where email_id={review_id}")
+    date = cursor.fetchone()[0]
+
+    cursor.exec(f"delete from reviewdates where email_id={review_id}")
+    cursor.exec(f"delete from reviewedproperties where reviewed_date='{date}'")
+
+    conn.commit()
 
     return redirect(url_for("index"))
 
@@ -150,10 +152,10 @@ def update_settings():
 
 
 def count_new_properties() -> str:
-    engine = create_engine(database_uri, echo=False)
+    conn = psycopg2.connect(database_uri)
     # Get count of new properties:
     sql = "select count(*) from alert_properties where travel_time < 45 and review_id is null"
-    count_props = pd.read_sql(sql, engine).values[0][0]
+    count_props = pd.read_sql(sql, conn).values[0][0]
 
     new_properties = ""
     if count_props > 0:

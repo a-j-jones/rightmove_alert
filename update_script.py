@@ -1,16 +1,9 @@
 import asyncio
 import logging
-import os
-import sqlite3
-
-from sqlmodel import create_engine, select, Session
 
 from app import count_new_properties
-from config import DATA, SQL_PATH
 from config.logging import logging_setup
-from email_data.send_email import prepare_email_html, send_email
 from rightmove.geolocation import update_locations
-from rightmove.models import ReviewDates, database_uri, create_models
 from rightmove.run import (
     download_property_data,
     mark_properties_reviewed,
@@ -18,18 +11,6 @@ from rightmove.run import (
 
 logger = logging.getLogger(__name__)
 logger = logging_setup(logger)
-
-
-def create_database():
-    create_models()
-    with open(os.path.join(DATA, "views.sql")) as f:
-        sql = f.read()
-
-    conn = sqlite3.connect(SQL_PATH)
-    c = conn.cursor()
-    c.execute(sql)
-    conn.commit()
-    conn.close()
 
 
 def main():
@@ -57,18 +38,19 @@ def main():
     mark_properties_reviewed()
 
     # Send email:
-    logger.info("Creating email...")
-    engine = create_engine(database_uri, echo=False)
-    query = (
-        select([ReviewDates.email_id]).order_by(ReviewDates.email_id.desc()).limit(1)
-    )
-    with Session(engine) as session:
-        email_id = session.exec(query).first()
 
-    if email_id:
-        if prepare_email_html(email_id):
-            logger.info("Sending email...")
-            send_email()
+    # logger.info("Creating email...")
+    # engine = create_engine(database_uri, echo=False)
+    # query = (
+    #     select([ReviewDates.email_id]).order_by(ReviewDates.email_id.desc()).limit(1)
+    # )
+    # with Session(engine) as session:
+    #     email_id = session.exec(query).first()
+    #
+    # if email_id:
+    #     if prepare_email_html(email_id):
+    #         logger.info("Sending email...")
+    #         send_email()
 
 
 if __name__ == "__main__":

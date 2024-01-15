@@ -1,3 +1,5 @@
+import asyncio
+
 from rightmove.api_wrapper import Rightmove
 from rightmove.database import RightmoveDatabase
 from rightmove.models import database_uri
@@ -8,6 +10,7 @@ async def test_get_region():
     async with Rightmove(database) as rightmove:
         region = rightmove.get_region("LONDON")
         assert region == "REGION^87490"
+        print("Test 'test_get_region' passed.")
 
 
 async def test_get_properties():
@@ -23,6 +26,7 @@ async def test_get_properties():
             channel="BUY",
         )
         assert len(properties["properties"]) > 100
+        print("Test 'test_get_properties' passed.")
 
 
 async def test_get_property_data():
@@ -30,6 +34,7 @@ async def test_get_property_data():
     async with Rightmove(database) as rightmove:
         property_data = await rightmove.get_property_data("BUY", [143206301])
         assert len(property_data) == 1
+        print("Test 'test_get_property_data' passed.")
 
 
 def test_database():
@@ -45,6 +50,4 @@ def test_database():
 
 # asyncio.run(test_get_region())
 # asyncio.run(test_get_properties())
-# asyncio.run(test_get_property_data())
-
-test_database()
+asyncio.run(test_get_property_data())
