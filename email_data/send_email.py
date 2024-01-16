@@ -14,6 +14,7 @@ from requests import HTTPError
 
 from config import BASE_DIR, BOOTSTRAP_UTIL, DATA, TEMPLATES
 from config.logging import logging_setup
+from rightmove.database import get_email_addresses
 from rightmove.run import get_properties
 
 logger = logging.getLogger(__name__)
@@ -74,9 +75,7 @@ def send_email():
         email = secrets["email"]
         password = secrets["password"]
 
-    with open(os.path.join(DATA, "email_details.json"), "r") as f:
-        data = json.load(f)
-        recipients = data["recipients"]
+    recipients = get_email_addresses()
 
     message = create_email(email, recipients)
 

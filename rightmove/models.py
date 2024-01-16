@@ -4,6 +4,10 @@ from typing import Optional
 from pydantic import validator, BaseModel, Field
 
 
+class EmailAddress(BaseModel):
+    email_address: str = Field(default=None)
+
+
 class PropertyLocation(BaseModel):
     """
     Model to store Property location and channel information which is obtained via the

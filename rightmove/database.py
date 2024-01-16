@@ -7,7 +7,37 @@ import psycopg2
 from psycopg2 import extras
 from pydantic import BaseModel
 
-from rightmove.models import PropertyData
+from config import DATABASE_URI
+from rightmove.models import PropertyData, EmailAddress
+
+
+def get_email_addresses() -> List[str]:
+    """
+    Get email addresses from the database.
+    """
+    conn = psycopg2.connect(DATABASE_URI)
+    cursor = conn.cursor()
+    cursor.execute("SELECT email_address FROM email_details")
+    email_addresses = [row[0] for row in cursor.fetchall()]
+    cursor.close()
+    conn.close()
+
+    return email_addresses
+
+
+def set_email_addresses(email_addresses: List[EmailAddress]) -> None:
+    """
+    Set email addresses in the database.
+    """
+    conn = psycopg2.connect(DATABASE_URI)
+    cursor = conn.cursor()
+
+    cursor.execute("DELETE FROM email_details")
+    model_executemany(cursor, "email_details", email_addresses)
+
+    conn.commit()
+    cursor.close()
+    conn.close()
 
 
 def model_execute(cursor, table_name: str, value: BaseModel):

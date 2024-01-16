@@ -1,13 +1,9 @@
 **/.idea/
 **/__pycache__/
-.sass-cache/
+**/.sass-cache/
 /venv/
 
 /shapes/*.json
-database.db
 
 # Secrets:
 **/secrets.*
-**/email_details.json
-email_details.json
-

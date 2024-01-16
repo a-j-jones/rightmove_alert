@@ -1,3 +1,12 @@
+drop table if exists email_details;
+
+create table email_details
+(
+    email_address varchar(100) not null primary key
+);
+
+
+
 drop view if exists alert_properties;
 drop view if exists properties_current;
 drop view if exists start_date;

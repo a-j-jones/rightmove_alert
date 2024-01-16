@@ -7,7 +7,7 @@
                 <div class="form-group" id="recipientsGroup">
                     <label for="recipients">Recipients</label>
                     <div id="recipientList">
-                        {% for recipient in email_data['recipients'] %}
+                        {% for recipient in email_recipients %}
                             <div class="input-group input-group-sm mb-2">
                                 <input type="email" class="form-control" name="recipients[]" value="{{ recipient }}"
                                        required>

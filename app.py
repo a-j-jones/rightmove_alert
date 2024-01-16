@@ -1,5 +1,4 @@
 import asyncio
-import json
 import logging
 import os
 
@@ -15,10 +14,12 @@ from flask import (
     url_for,
 )
 
-from config import DATA, IS_WINDOWS, DATABASE_URI
+from config import IS_WINDOWS, DATABASE_URI
 from config.logging import logging_setup
 from email_data.send_email import prepare_email_html, send_email
+from rightmove.database import get_email_addresses, set_email_addresses
 from rightmove.geolocation import update_locations
+from rightmove.models import EmailAddress
 from rightmove.run import (
     download_properties,
     download_property_data,
@@ -127,9 +128,8 @@ def delete_review():
 
 @app.route("/settings", methods=["GET"])
 def settings():
-    with open(os.path.join(DATA, "email_details.json"), "r") as f:
-        email_data = json.load(f)
-    return render_template("settings.html", email_data=email_data)
+    email_recipients = get_email_addresses()
+    return render_template("settings.html", email_recipients=email_recipients)
 
 
 @app.route("/settings", methods=["POST"])
@@ -137,13 +137,8 @@ def update_settings():
     form_data = request.form
     recipients = form_data.getlist("recipients[]")
 
-    file = os.path.join(DATA, "email_details.json")
-    with open(file, "r") as f:
-        data = json.load(f)
-        data["recipients"] = recipients
-
-    with open(file, "w") as f:
-        json.dump(data, f, indent=4)
+    if recipients:
+        set_email_addresses([EmailAddress(email_address=email) for email in recipients])
 
     return redirect("/")
 
