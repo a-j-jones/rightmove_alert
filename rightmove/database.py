@@ -13,7 +13,6 @@ from rightmove.models import PropertyData, EmailAddress
 
 def get_database_connection():
     conn = psycopg2.connect(DATABASE_URI)
-    conn.autocommit = False
     return conn
 
 
@@ -125,16 +124,16 @@ class RightmoveDatabase:
         Closes the validto variable for properties which are no longer on the Rightmove website.
         :param ids:     List            A list of expected IDs which were sent in the API request.
         """
-        cursor = self.conn.cursor()
-        current_time = dt.datetime.now()
-
-        cursor.execute(
-            f"""
-            UPDATE propertydata
-            SET property_validto = '{current_time}'
-            WHERE property_id IN ({','.join([str(id) for id in missing_ids])})
-        """
-        )
+        with self.conn:
+            with self.conn.cursor() as cursor:
+                current_time = dt.datetime.now()
+                cursor.execute(
+                    f"""
+                    UPDATE propertydata
+                    SET property_validto = '{current_time}'
+                    WHERE property_id IN ({','.join([str(id) for id in missing_ids])})
+                """
+                )
 
     def get_id_len(self, update, channel, update_cutoff=None):
         """
@@ -147,31 +146,31 @@ class RightmoveDatabase:
         :return:            int         Number of properties which would be in the list.
         """
 
-        cursor = self.conn.cursor()
-        current_time = dt.datetime.now()
-        sql = f"""
-                SELECT COUNT(DISTINCT pl.property_id)
-                FROM propertylocation pl
-                LEFT JOIN propertydata pd ON pl.property_id = pd.property_id
-                WHERE pl.property_channel = '{channel}'
-            """
-        if update:
-            if update_cutoff:
-                sql += f"""
-                                AND (
-                                    (pd.last_update < '{update_cutoff}' OR pd.last_update IS NULL)
-                                    AND pd.property_validto >= '{current_time}'
-                                    OR pd.property_id IS NULL
-                                )
-                            """
-        else:
-            sql += "AND pd.property_id IS NULL"
+        with self.conn:
+            with self.conn.cursor() as cursor:
+                current_time = dt.datetime.now()
+                sql = f"""
+                        SELECT COUNT(DISTINCT pl.property_id)
+                        FROM propertylocation pl
+                        LEFT JOIN propertydata pd ON pl.property_id = pd.property_id
+                        WHERE pl.property_channel = '{channel}'
+                    """
+                if update:
+                    if update_cutoff:
+                        sql += f"""
+                                        AND (
+                                            (pd.last_update < '{update_cutoff}' OR pd.last_update IS NULL)
+                                            AND pd.property_validto >= '{current_time}'
+                                            OR pd.property_id IS NULL
+                                        )
+                                    """
+                else:
+                    sql += "AND pd.property_id IS NULL"
 
-        cursor.execute(sql)
-        result = cursor.fetchone()[0]
-        cursor.close()
+                cursor.execute(sql)
+                result = cursor.fetchone()[0]
 
-        return result
+                return result
 
     def get_id_list(self, update: bool, channel: str, update_cutoff=None) -> List[int]:
         """
@@ -184,42 +183,43 @@ class RightmoveDatabase:
         :param channel:     string      The channel which should be searched (RENT/BUY)
         :return:            list        A list of Property ID integers.
         """
-        cursor = self.conn.cursor()
-        current_time = dt.datetime.now()
 
-        sql = f"""
-            SELECT pl.property_id
-            FROM propertylocation pl
-            LEFT JOIN propertydata pd ON pl.property_id = pd.property_id
-            WHERE pl.property_channel = '{channel}'
-        """
+        with self.conn:
+            with self.conn.cursor() as cursor:
 
-        if update:
-            if update_cutoff:
-                sql += f"""
-                    AND (
-                        (pd.last_update < '{update_cutoff}' OR pd.last_update IS NULL)
-                        AND pd.property_validto >= '{current_time}'
-                        OR pd.property_id IS NULL
-                    )
+                current_time = dt.datetime.now()
+
+                sql = f"""
+                    SELECT pl.property_id
+                    FROM propertylocation pl
+                    LEFT JOIN propertydata pd ON pl.property_id = pd.property_id
+                    WHERE pl.property_channel = '{channel}'
                 """
 
-        else:
-            sql += "AND pd.property_id IS NULL"
+                if update:
+                    if update_cutoff:
+                        sql += f"""
+                            AND (
+                                (pd.last_update < '{update_cutoff}' OR pd.last_update IS NULL)
+                                AND pd.property_validto >= '{current_time}'
+                                OR pd.property_id IS NULL
+                            )
+                        """
 
-        cursor.execute(sql)
-        ids = []
+                else:
+                    sql += "AND pd.property_id IS NULL"
 
-        results = set([x[0] for x in cursor.fetchall()])
-        for result in results:
-            ids.append(result)
-            if len(ids) == 25:
-                yield ids
+                cursor.execute(sql)
                 ids = []
-        if len(ids) > 0:
-            yield ids
 
-        cursor.close()
+                results = set([x[0] for x in cursor.fetchall()])
+                for result in results:
+                    ids.append(result)
+                    if len(ids) == 25:
+                        yield ids
+                        ids = []
+                if len(ids) > 0:
+                    yield ids
 
     def load_map_properties(self, data: dict, channel: str) -> None:
         """
@@ -227,56 +227,55 @@ class RightmoveDatabase:
         :param data:    Dictionary      JSON response from the Rightmove API.
         :param channel  String          The channel which searched for in the API.
         """
-        cursor = self.conn.cursor()
+        with self.conn:
+            with self.conn.cursor() as cursor:
 
-        current_time = dt.datetime.now()
-        channel = channel.upper()
-        properties = data["properties"]
+                current_time = dt.datetime.now()
+                channel = channel.upper()
+                properties = data["properties"]
 
-        # Check for existing IDs in the database:
-        ids = [p["id"] for p in properties]
-        if len(ids) == 0:
-            cursor.close()
-            return
+                # Check for existing IDs in the database:
+                ids = [p["id"] for p in properties]
+                if len(ids) == 0:
+                    cursor.close()
+                    return
 
-        cursor.execute(
-            f"""
-            SELECT property_id 
-            FROM propertylocation 
-            WHERE property_id IN ({','.join([str(p['id']) for p in properties])})"""
-        )
-        existing_ids = [r[0] for r in cursor.fetchall()]
-
-        insert_values = []
-        for property_data in properties:
-            if property_data["id"] in existing_ids:
-                continue
-
-            insert_values.append(
-                (
-                    property_data["id"],
-                    current_time,
-                    channel,
-                    property_data["location"]["latitude"],
-                    property_data["location"]["longitude"],
+                cursor.execute(
+                    f"""
+                    SELECT property_id 
+                    FROM propertylocation 
+                    WHERE property_id IN ({','.join([str(p['id']) for p in properties])})"""
                 )
-            )
+                existing_ids = [r[0] for r in cursor.fetchall()]
 
-        if len(insert_values) > 0:
-            cursor.executemany(
-                """
-                INSERT INTO propertylocation (
-                    property_id,
-                    property_asatdt,
-                    property_channel,
-                    property_latitude,
-                    property_longitude
-                ) VALUES (%s, %s, %s, %s, %s)
-                """,
-                insert_values,
-            )
-            self.conn.commit()
-            cursor.close()
+                insert_values = []
+                for property_data in properties:
+                    if property_data["id"] in existing_ids:
+                        continue
+
+                    insert_values.append(
+                        (
+                            property_data["id"],
+                            current_time,
+                            channel,
+                            property_data["location"]["latitude"],
+                            property_data["location"]["longitude"],
+                        )
+                    )
+
+                if len(insert_values) > 0:
+                    cursor.executemany(
+                        """
+                        INSERT INTO propertylocation (
+                            property_id,
+                            property_asatdt,
+                            property_channel,
+                            property_latitude,
+                            property_longitude
+                        ) VALUES (%s, %s, %s, %s, %s)
+                        """,
+                        insert_values,
+                    )
 
     def load_property_data(self, data: dict, ids: list[int]) -> None:
         cursor = self.conn.cursor(cursor_factory=extras.DictCursor)
