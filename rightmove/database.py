@@ -11,33 +11,24 @@ from config import DATABASE_URI
 from rightmove.models import PropertyData, EmailAddress
 
 
-def get_email_addresses() -> List[str]:
-    """
-    Get email addresses from the database.
-    """
+def get_database_connection():
     conn = psycopg2.connect(DATABASE_URI)
-    cursor = conn.cursor()
-    cursor.execute("SELECT email_address FROM email_details")
-    email_addresses = [row[0] for row in cursor.fetchall()]
-    cursor.close()
-    conn.close()
+    conn.autocommit = False
+    return conn
 
-    return email_addresses
+
+def get_email_addresses() -> List[str]:
+    with get_database_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT email_address FROM email_details")
+            return [row[0] for row in cursor.fetchall()]
 
 
 def set_email_addresses(email_addresses: List[EmailAddress]) -> None:
-    """
-    Set email addresses in the database.
-    """
-    conn = psycopg2.connect(DATABASE_URI)
-    cursor = conn.cursor()
-
-    cursor.execute("DELETE FROM email_details")
-    model_executemany(cursor, "email_details", email_addresses)
-
-    conn.commit()
-    cursor.close()
-    conn.close()
+    with get_database_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute("DELETE FROM email_details")
+            model_executemany(cursor, "email_details", email_addresses)
 
 
 def model_execute(cursor, table_name: str, value: BaseModel):
