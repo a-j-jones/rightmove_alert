@@ -92,18 +92,6 @@ def parse_added_or_reduced(added_or_reduced_str):
     return added_or_reduced
 
 
-def insert_property_data(cursor, property_data: PropertyData):
-    # Insert property data into the database
-    # Use placeholders (%s) to prevent SQL injection
-    data = property_data.model_dump()
-    keys = data.keys()
-    sql = f"""
-        INSERT INTO propertydata ({','.join(keys)})
-        VALUES ({','.join(['%s' for _ in keys])})
-    """
-    cursor.execute(sql, tuple(data.values()))
-
-
 def insert_property_images(cursor, property_images):
     # Insert property images into the database using executemany
     insert_query = """
@@ -212,13 +200,14 @@ class RightmoveDatabase:
                 ids = []
 
                 results = set([x[0] for x in cursor.fetchall()])
-                for result in results:
-                    ids.append(result)
-                    if len(ids) == 25:
-                        yield ids
-                        ids = []
-                if len(ids) > 0:
-                    yield ids
+
+        for result in results:
+            ids.append(result)
+            if len(ids) == 25:
+                yield ids
+                ids = []
+        if len(ids) > 0:
+            yield ids
 
     def load_map_properties(self, data: dict, channel: str) -> None:
         """
@@ -338,6 +327,7 @@ class RightmoveDatabase:
                     last_displayed_update=added_or_reduced,
                 )
 
+                insert_list = []
                 # Check for changes in property data
                 if existing_record and self.has_changes(existing_record, property_data):
                     # Mark the existing record as no longer valid
@@ -350,10 +340,13 @@ class RightmoveDatabase:
                         (current_time, property_id, current_time),
                     )
                     # Insert a new record with updated data
-                    insert_property_data(cursor, property_data)
+                    insert_list.append(property_data)
                 elif not existing_record:
                     # Insert a new record if no existing record is found
-                    insert_property_data(cursor, property_data)
+                    insert_list.append(property_data)
+
+                if insert_list:
+                    model_executemany(cursor, "propertydata", insert_list)
 
                 # Insert property images using executemany
                 property_images = [
