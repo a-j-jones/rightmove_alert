@@ -186,7 +186,6 @@ class RightmoveDatabase:
 
         with self.conn:
             with self.conn.cursor() as cursor:
-
                 current_time = dt.datetime.now()
 
                 sql = f"""
@@ -229,7 +228,6 @@ class RightmoveDatabase:
         """
         with self.conn:
             with self.conn.cursor() as cursor:
-
                 current_time = dt.datetime.now()
                 channel = channel.upper()
                 properties = data["properties"]
