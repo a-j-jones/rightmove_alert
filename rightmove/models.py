@@ -3,8 +3,6 @@ from typing import Optional
 
 from pydantic import validator, BaseModel, Field
 
-database_uri = "postgresql://root:root@localhost:5432/rightmove"
-
 
 class PropertyLocation(BaseModel):
     """

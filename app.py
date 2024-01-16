@@ -15,11 +15,10 @@ from flask import (
     url_for,
 )
 
-from config import DATA, IS_WINDOWS
+from config import DATA, IS_WINDOWS, DATABASE_URI
 from config.logging import logging_setup
 from email_data.send_email import prepare_email_html, send_email
 from rightmove.geolocation import update_locations
-from rightmove.models import database_uri
 from rightmove.run import (
     download_properties,
     download_property_data,
@@ -47,11 +46,9 @@ def favicon():
 
 @app.route("/")
 def index():
-    conn = psycopg2.connect(database_uri)
-
     # Get review dates:
     sql = "select distinct email_id, str_date from reviewdates order by email_id desc"
-    items = pd.read_sql(sql, conn).to_records()
+    items = pd.read_sql(sql, DATABASE_URI).to_records()
 
     new_properties = count_new_properties()
 
@@ -114,7 +111,7 @@ def delete_review():
     data = request.args.to_dict()
     review_id = data.get("id")
 
-    conn = psycopg2.connect(database_uri)
+    conn = psycopg2.connect(DATABASE_URI)
     cursor = conn.cursor()
 
     cursor.exec(f"select reviewed_date from reviewdates where email_id={review_id}")
@@ -152,10 +149,9 @@ def update_settings():
 
 
 def count_new_properties() -> str:
-    conn = psycopg2.connect(database_uri)
     # Get count of new properties:
     sql = "select count(*) from alert_properties where travel_time < 45 and review_id is null"
-    count_props = pd.read_sql(sql, conn).values[0][0]
+    count_props = pd.read_sql(sql, DATABASE_URI).values[0][0]
 
     new_properties = ""
     if count_props > 0:
@@ -170,7 +166,7 @@ if __name__ == "__main__":
         port = 5002
     else:
         host = "0.0.0.0"
-        port = 5001
+        port = 5009
 
     logger.info("Starting server...")
     waitress.serve(app, port=port, host=host)

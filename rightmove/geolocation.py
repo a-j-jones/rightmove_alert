@@ -1,4 +1,5 @@
 import json
+import logging
 from os import path
 from pathlib import Path
 
@@ -8,8 +9,13 @@ import pandas as pd
 import psycopg2
 from numba import njit
 
+from config import DATABASE_URI
+from config.logging import logging_setup
 from rightmove.database import model_executemany
-from rightmove.models import database_uri, TravelTimePrecise
+from rightmove.models import TravelTimePrecise
+
+logger = logging.getLogger(__name__)
+logger = logging_setup(logger)
 
 
 @njit()
@@ -64,12 +70,14 @@ def update_locations():
     """
     Updates the locations with the travel time data
     """
-    conn = psycopg2.connect(database_uri)
-    sql = "SELECT * FROM alert_properties where not travel_reviewed"
-    df = pd.read_sql(sql, conn)
+    sql = "SELECT * FROM alert_properties where travel_reviewed = 0"
+    df = pd.read_sql(sql, DATABASE_URI)
 
     if len(df) == 0:
+        logger.info("No new properties found.")
         return
+
+    logger.info(f"Updating {len(df)} properties...")
 
     points = df[["latitude", "longitude"]].values
 
@@ -105,9 +113,11 @@ def update_locations():
     for index, row in df.iterrows():
         values.append(TravelTimePrecise(**row.to_dict()))
 
+    conn = psycopg2.connect(DATABASE_URI)
     cursor = conn.cursor()
     model_executemany(cursor, "traveltimeprecise", values)
 
+    conn.commit()
     cursor.close()
     conn.close()
 

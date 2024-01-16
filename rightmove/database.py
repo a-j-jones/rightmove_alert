@@ -15,8 +15,7 @@ def model_execute(cursor, table_name: str, value: BaseModel):
     Insert a pydantic model into a database table using execute.
     """
     # Get the model fields
-    model_fields = value.model_fields()
-    model_field_names = [field.name for field in model_fields]
+    model_field_names = [field for field in value.model_fields]
 
     # Construct the insert query
     insert_query = f"""
@@ -36,8 +35,7 @@ def model_executemany(cursor, table_name: str, values: List[BaseModel]):
         return
 
     # Get the model fields
-    model_fields = values[0].model_fields()
-    model_field_names = [field.name for field in model_fields]
+    model_field_names = [field for field in values[0].model_fields]
 
     # Construct the insert query
     insert_query = f"""

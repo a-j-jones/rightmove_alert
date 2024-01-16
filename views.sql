@@ -60,4 +60,4 @@ WHERE price_amount BETWEEN 550000 AND 850000
   AND NOT commercial
   AND NOT auction
   AND LOWER(summary) LIKE '%garden%'
-  AND last_rightmove_update > TO_CHAR(CURRENT_DATE - INTERVAL '60 days', 'YYYY-MM-DD');
+  AND last_rightmove_update > TO_CHAR(CURRENT_DATE - INTERVAL '30 days', 'YYYY-MM-DD');

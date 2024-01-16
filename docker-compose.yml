@@ -1,21 +1,32 @@
 version: '3'
 
 services:
-  web:
+  web_interface:
+    container_name: web_interface
     build: .
+    networks:
+      - postgresql
     ports:
-      - "5001:5001"
+      - "5009:5009"
     volumes:
       - db-data:/data
     restart: always
 
   scheduler:
+    container_name: scheduler
     build:
       context: .
       dockerfile: Dockerfile.scheduler
+    networks:
+      - postgresql
     volumes:
       - db-data:/data
     restart: always
 
 volumes:
   db-data:
+
+networks:
+  postgresql:
+    name: postgresql
+    external: true

@@ -4,15 +4,16 @@ import datetime as dt
 import pandas as pd
 import psycopg2
 
+from config import DATABASE_URI
 from rightmove.api_wrapper import Rightmove
 from rightmove.database import RightmoveDatabase, model_executemany, model_execute
-from rightmove.models import database_uri, ReviewDates, ReviewedProperties
+from rightmove.models import ReviewDates, ReviewedProperties
 from rightmove.search_algorithm import RightmoveSearcher
 
 
 async def download_properties(channel):
     # Initialise objects
-    database = RightmoveDatabase(database_uri)
+    database = RightmoveDatabase(DATABASE_URI)
     async with Rightmove(database=database) as rightmove_api:
         searcher = RightmoveSearcher(rightmove_api=rightmove_api, database=database)
         task = searcher.get_all_properties(
@@ -39,7 +40,7 @@ async def download_properties(channel):
 
 async def download_property_data(update, cutoff=None):
     # Initialise objects
-    database = RightmoveDatabase(database_uri)
+    database = RightmoveDatabase(DATABASE_URI)
 
     async with Rightmove(database=database) as rightmove_api:
         searcher = RightmoveSearcher(rightmove_api=rightmove_api, database=database)
@@ -54,32 +55,36 @@ async def download_property_data(update, cutoff=None):
 
 
 def mark_properties_reviewed():
-    conn = psycopg2.connect(database_uri)
+    conn = psycopg2.connect(DATABASE_URI)
     conn.autocommit = False
-
-    property_ids = pd.read_sql(
-        "SELECT property_id FROM alert_properties where not property_reviewed", conn
-    )
-    review_id = (
-        pd.read_sql("select max(email_id) as last_id from reviewdates", conn).last_id[0]
-        + 1
-    )
-
     cursor = conn.cursor()
+
+    cursor.execute(
+        "select distinct property_id from alert_properties where property_reviewed = 0"
+    )
+    property_ids = cursor.fetchall()
+
+    cursor.execute("select coalesce(max(email_id), 0) as last_id from reviewdates")
+    review_id = cursor.fetchone()[0] + 1
+
+    if len(property_ids) == 0:
+        cursor.close()
+        conn.close()
+        return
+
     review_date = dt.datetime.now()
     review = ReviewDates(
         email_id=review_id,
         reviewed_date=review_date,
         str_date=review_date.strftime("%d-%b-%Y"),
     )
-    if len(property_ids) > 0:
-        model_execute(cursor, table_name="reviewdates", value=review)
+    model_execute(cursor, table_name="reviewdates", value=review)
 
     values = [
         ReviewedProperties(
-            property_id=property_id, reviewed_date=review_id, emailed=False
+            property_id=property_id[0], reviewed_date=review_date, emailed=False
         )
-        for property_id in property_ids.property_id.unique()
+        for property_id in property_ids
     ]
     model_executemany(cursor, table_name="reviewedproperties", values=values)
 
@@ -97,8 +102,7 @@ def get_properties(sql_filter):
     """
 
     # Reading data from CSV
-    conn = psycopg2.connect(database_uri)
-    df = pd.read_sql(sql, conn)
+    df = pd.read_sql(sql, DATABASE_URI)
 
     properties = []
     for index, property in df.iterrows():
