@@ -10,7 +10,7 @@ if IS_WINDOWS:
     STATIC = os.path.join(BASE_DIR, "static")
     BOOTSTRAP_UTIL = "bootstrap-email.bat"
 else:
-    DATA = "/data"
+    DATA = "/app/data"
     DATABASE_URI = "postgresql://root:root@pgvector:5432/rightmove"
     TEMPLATES = "/app/templates"
     STATIC = "/app/static"
