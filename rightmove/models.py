@@ -102,16 +102,6 @@ class ReviewDates(BaseModel):
     str_date: Optional[str] = Field(default=None)
 
 
-class TravelTime(BaseModel):
-    property_id: int = Field(
-        default=None,
-        primary_key=True,
-    )
-    sub_35m: bool = Field(default=False)
-    sub_40m: bool = Field(default=False)
-    sub_45m: bool = Field(default=False)
-
-
 class TravelTimePrecise(BaseModel):
     property_id: int = Field(
         default=None,
