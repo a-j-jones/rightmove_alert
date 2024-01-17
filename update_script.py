@@ -6,7 +6,7 @@ import psycopg2
 from app import count_new_properties
 from config import DATABASE_URI
 from config.logging import logging_setup
-from email_data.send_email import prepare_email_html
+from email_data.send_email import prepare_email_html, send_email
 from rightmove.geolocation import update_locations
 from rightmove.run import (
     download_property_data,
@@ -50,7 +50,7 @@ def main():
     if email_id:
         if prepare_email_html(email_id):
             logger.info("Sending email...")
-            # send_email()
+            send_email()
 
 
 if __name__ == "__main__":
