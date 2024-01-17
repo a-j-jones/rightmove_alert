@@ -1,10 +1,7 @@
 import asyncio
 import logging
 
-import psycopg2
-
 from app import count_new_properties
-from config import DATABASE_URI
 from config.logging import logging_setup
 from email_data.send_email import prepare_email_html, send_email
 from rightmove.geolocation import update_locations
@@ -36,21 +33,16 @@ def main():
 
     # Mark properties as reviewed:
     logger.info("Marking properties as reviewed...")
-    mark_properties_reviewed()
+    email_id = mark_properties_reviewed()
 
     # Send email:
-    logger.info("Creating email...")
-
-    sql = "SELECT email_id FROM reviewdates ORDER BY email_id DESC LIMIT 1"
-    conn = psycopg2.connect(DATABASE_URI)
-    cursor = conn.cursor()
-    cursor.execute(sql)
-    email_id = cursor.fetchone()[0]
-
     if email_id:
+        logger.info("Creating email...")
         if prepare_email_html(email_id):
             logger.info("Sending email...")
             send_email()
+    else:
+        logger.info("No properties found in latest review.")
 
 
 if __name__ == "__main__":

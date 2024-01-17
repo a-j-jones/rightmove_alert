@@ -55,7 +55,7 @@ async def download_property_data(update, cutoff=None):
             await asyncio.sleep(1)
 
 
-def mark_properties_reviewed():
+def mark_properties_reviewed() -> int | None:
     conn = psycopg2.connect(DATABASE_URI)
     conn.autocommit = False
     cursor = conn.cursor()
@@ -71,7 +71,7 @@ def mark_properties_reviewed():
     if len(property_ids) == 0:
         cursor.close()
         conn.close()
-        return
+        return None
 
     review_date = dt.datetime.now()
     review = ReviewDates(
@@ -92,6 +92,8 @@ def mark_properties_reviewed():
     conn.commit()
     cursor.close()
     conn.close()
+
+    return review_id
 
 
 def get_properties(sql_filter):
