@@ -115,11 +115,11 @@ def delete_review():
     conn = psycopg2.connect(DATABASE_URI)
     cursor = conn.cursor()
 
-    cursor.exec(f"select reviewed_date from reviewdates where email_id={review_id}")
+    cursor.execute(f"select reviewed_date from reviewdates where email_id={review_id}")
     date = cursor.fetchone()[0]
 
-    cursor.exec(f"delete from reviewdates where email_id={review_id}")
-    cursor.exec(f"delete from reviewedproperties where reviewed_date='{date}'")
+    cursor.execute(f"delete from reviewdates where email_id={review_id}")
+    cursor.execute(f"delete from reviewedproperties where reviewed_date='{date}'")
 
     conn.commit()
 
