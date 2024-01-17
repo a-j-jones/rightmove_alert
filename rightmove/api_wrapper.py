@@ -2,7 +2,7 @@ import logging
 from functools import lru_cache
 from json import JSONDecodeError
 from textwrap import wrap
-from typing import Optional
+from typing import Optional, Dict
 
 import httpx
 import requests
@@ -21,6 +21,7 @@ HEADERS = {
 class Rightmove:
     def __init__(self, database):
         self.database = database
+        self.properties: Dict = {}
 
     async def __aenter__(self):
         """
@@ -182,7 +183,8 @@ class Rightmove:
         data = r.json()
 
         if load_sql:
-            self.database.load_map_properties(data, channel=channel)
+            properties = {property["id"]: property for property in data["properties"]}
+            self.properties.update(properties)
 
         return data
 
@@ -223,3 +225,11 @@ class Rightmove:
             progress.update(len(ids))
 
         return data
+
+    def save_property_data(self, channel) -> None:
+        """
+        Loads the property data into the database.
+        """
+        logger.info("Saving property data to database...")
+        self.database.load_map_properties(self.properties, channel=channel)
+        self.properties = {}

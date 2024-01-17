@@ -17,6 +17,7 @@ class RightmoveSearcher:
             "{desc:<20} {percentage:3.0f}%|{bar}| remaining: {remaining_s:.1f}"
         )
         self.progress = None
+        self.properties = {}
         self.tasks = []
 
     async def get_all_properties(

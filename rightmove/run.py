@@ -36,6 +36,7 @@ async def download_properties(channel):
             await asyncio.sleep(1)
 
         searcher.progress.close()
+        searcher.rm.save_property_data(channel)
 
 
 async def download_property_data(update, cutoff=None):

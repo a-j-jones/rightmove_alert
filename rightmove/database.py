@@ -209,21 +209,19 @@ class RightmoveDatabase:
         if len(ids) > 0:
             yield ids
 
-    def load_map_properties(self, data: dict, channel: str) -> None:
+    def load_map_properties(self, properties: dict, channel: str) -> None:
         """
         Loads the data obtained from the Rightmove API into the database.
-        :param data:    Dictionary      JSON response from the Rightmove API.
-        :param channel  String          The channel which searched for in the API.
+        :param properties:      Dictionary      JSON response from the Rightmove API.
+        :param channel          String          The channel which searched for in the API.
         """
         with self.conn:
             with self.conn.cursor() as cursor:
                 current_time = dt.datetime.now()
                 channel = channel.upper()
-                properties = data["properties"]
 
                 # Check for existing IDs in the database:
-                ids = [p["id"] for p in properties]
-                if len(ids) == 0:
+                if len(properties) == 0:
                     cursor.close()
                     return
 
@@ -231,12 +229,12 @@ class RightmoveDatabase:
                     f"""
                     SELECT property_id 
                     FROM propertylocation 
-                    WHERE property_id IN ({','.join([str(p['id']) for p in properties])})"""
+                    WHERE property_id IN ({','.join([str(p) for p in properties.keys()])})"""
                 )
-                existing_ids = [r[0] for r in cursor.fetchall()]
+                existing_ids: set = {r[0] for r in cursor.fetchall()}
 
                 insert_values = []
-                for property_data in properties:
+                for property_data in properties.values():
                     if property_data["id"] in existing_ids:
                         continue
 
@@ -251,8 +249,7 @@ class RightmoveDatabase:
                     )
 
                 if len(insert_values) > 0:
-                    cursor.executemany(
-                        """
+                    sql = """
                         INSERT INTO propertylocation (
                             property_id,
                             property_asatdt,
@@ -260,9 +257,8 @@ class RightmoveDatabase:
                             property_latitude,
                             property_longitude
                         ) VALUES (%s, %s, %s, %s, %s)
-                        """,
-                        insert_values,
-                    )
+                        """
+                    extras.execute_batch(cursor, sql, insert_values)
 
     def load_property_data(self, data: dict, ids: list[int]) -> None:
         cursor = self.conn.cursor(cursor_factory=extras.DictCursor)
