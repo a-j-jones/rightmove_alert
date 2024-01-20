@@ -1,16 +1,14 @@
-drop table if exists email_details;
-
-create table email_details
+create table if not exists email_details
 (
     email_address varchar(100) not null primary key
 );
 
 
 
+drop view if exists properties_review;
 drop view if exists alert_properties;
 drop view if exists properties_current;
 drop view if exists start_date;
-
 
 CREATE VIEW start_date as
 select max(property_validfrom) as model_date
@@ -64,9 +62,16 @@ FROM properties_current ap
          LEFT JOIN reviewdates rp ON r.reviewed_date = rp.reviewed_date
 WHERE price_amount BETWEEN 550000 AND 850000
   AND bedrooms >= 2
-  AND area > 700
+  AND (area > 700 or area is null)
   AND NOT development
   AND NOT commercial
   AND NOT auction
   AND LOWER(summary) LIKE '%garden%'
   AND last_rightmove_update > TO_CHAR(CURRENT_DATE - INTERVAL '30 days', 'YYYY-MM-DD');
+
+CREATE VIEW properties_review AS
+SELECT *
+FROM alert_properties
+WHERE travel_time <= 45
+ORDER BY review_id DESC
+;
