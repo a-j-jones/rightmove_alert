@@ -12,7 +12,7 @@ from numba import njit
 from config import DATABASE_URI
 from config.logging import logging_setup
 from rightmove.database import model_executemany
-from rightmove.models import TravelTimePrecise
+from rightmove.models import PropertyLocationExcluded, TravelTimePrecise
 
 logger = logging.getLogger(__name__)
 logger = logging_setup(logger)
@@ -83,6 +83,8 @@ def update_locations():
 
     keep_cols = []
     parent_dir = Path(path.dirname(path.dirname(__file__)))
+
+    # Loop through all of the travel time polygons:
     files = sorted(list(parent_dir.glob("shapes/sub_*.json")))
     for file in files:
         result = np.zeros(len(points), dtype=bool)
@@ -100,6 +102,15 @@ def update_locations():
         df[col] = result
         df[int(file.stem.replace("sub_", "").replace("m", ""))] = result
 
+    # Loop through any excluded polygons and set the travel time to 999 if the property is in the polygon:
+    files = sorted(list(parent_dir.glob("shapes/exclude_*.json")))
+    exclude_location = np.zeros(len(points), dtype=bool)
+    for file in files:
+        for polygon_data in get_shape(file):
+            polygon = pd.DataFrame(polygon_data["shell"]).values
+            result = points_in_polygon_parallel(points, polygon)
+            exclude_location = np.logical_or(exclude_location, result)
+
     df = df.melt(
         id_vars=["property_id"],
         value_vars=keep_cols,
@@ -108,14 +119,20 @@ def update_locations():
     )
     df["travel_time"] = df.travel_time.where(df.in_polygon, 999)
     df = df.groupby("property_id").agg({"travel_time": "min"}).reset_index()
+    df = df.sort_values("property_id")
+    df["excluded"] = exclude_location
 
-    values = []
+    travel_time_values = []
+    excluded_values = []
     for index, row in df.iterrows():
-        values.append(TravelTimePrecise(**row.to_dict()))
+        travel_time_values.append(TravelTimePrecise(**row.to_dict()))
+        excluded_values.append(PropertyLocationExcluded(**row.to_dict()))
 
     conn = psycopg2.connect(DATABASE_URI)
     cursor = conn.cursor()
-    model_executemany(cursor, "traveltimeprecise", values)
+
+    model_executemany(cursor, "traveltimeprecise", travel_time_values)
+    model_executemany(cursor, "property_location_excluded", excluded_values)
 
     conn.commit()
     cursor.close()

@@ -110,6 +110,11 @@ class TravelTimePrecise(BaseModel):
     travel_time: int = Field(default=None)
 
 
+class PropertyLocationExcluded(BaseModel):
+    property_id: int
+    excluded: bool = Field(default=False)
+
+
 class PropertyFloorplan(BaseModel):
     property_id: int
     floorplan_url: Optional[str] = Field(default=None)

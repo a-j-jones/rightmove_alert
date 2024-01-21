@@ -11,6 +11,12 @@ create table if not exists property_floorplan
     area_sqm      double precision
 );
 
+create table if not exists property_location_excluded
+(
+    property_id integer not null primary key,
+    excluded    boolean
+);
+
 drop view if exists properties_review;
 drop view if exists alert_properties;
 drop view if exists properties_current;
@@ -64,6 +70,7 @@ SELECT ap.property_id,
         WHERE pi.property_id = ap.property_id)                     AS images
 FROM properties_current ap
          LEFT JOIN traveltimeprecise tp ON ap.property_id = tp.property_id
+         LEFT JOIN property_location_excluded ple ON ap.property_id = ple.property_id
          LEFT JOIN reviewedproperties r ON ap.property_id = r.property_id
          LEFT JOIN reviewdates rp ON r.reviewed_date = rp.reviewed_date
          LEFT JOIN property_floorplan pf ON ap.property_id = pf.property_id
@@ -74,7 +81,9 @@ WHERE price_amount BETWEEN 550000 AND 850000
   AND NOT commercial
   AND NOT auction
   AND LOWER(summary) LIKE '%garden%'
-  AND last_rightmove_update > TO_CHAR(CURRENT_DATE - INTERVAL '30 days', 'YYYY-MM-DD');
+  AND last_rightmove_update > TO_CHAR(CURRENT_DATE - INTERVAL '30 days', 'YYYY-MM-DD')
+  AND NOT ple.excluded
+;
 
 CREATE VIEW properties_review AS
 SELECT *
