@@ -8,7 +8,7 @@ from psycopg2 import extras
 from pydantic import BaseModel
 
 from config import DATABASE_URI
-from rightmove.models import PropertyData, EmailAddress
+from rightmove.models import PropertyData, EmailAddress, PropertyFloorplan
 
 
 def get_database_connection():
@@ -28,6 +28,31 @@ def set_email_addresses(email_addresses: List[EmailAddress]) -> None:
         with conn.cursor() as cursor:
             cursor.execute("DELETE FROM email_details")
             model_executemany(cursor, "email_details", email_addresses)
+
+
+def get_floorplan_properties() -> List[int]:
+    """
+    Get a list of property IDs which require enhanced data by going to
+    the Rightmove page for the property and scraping additional information.
+    """
+    with get_database_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                SELECT DISTINCT ap.property_id
+                FROM alert_properties ap
+                LEFT JOIN property_floorplan pf ON ap.property_id = pf.property_id
+                WHERE pf.property_id IS NULL and ap.area is null
+                """)
+            return [row[0] for row in cursor.fetchall()]
+
+
+def insert_floorplans(floorplans: List[PropertyFloorplan]) -> None:
+    """
+    Insert a list of floorplans into the database.
+    """
+    with get_database_connection() as conn:
+        with conn.cursor() as cursor:
+            model_executemany(cursor, "property_floorplan", floorplans)
 
 
 def model_execute(cursor, table_name: str, value: BaseModel):
@@ -115,13 +140,11 @@ class RightmoveDatabase:
         with self.conn:
             with self.conn.cursor() as cursor:
                 current_time = dt.datetime.now()
-                cursor.execute(
-                    f"""
+                cursor.execute(f"""
                     UPDATE propertydata
                     SET property_validto = '{current_time}'
                     WHERE property_id IN ({','.join([str(id) for id in missing_ids])})
-                """
-                )
+                """)
 
     def get_id_len(self, update, channel, update_cutoff=None):
         """
@@ -238,15 +261,13 @@ class RightmoveDatabase:
                     if property_data["id"] in existing_ids:
                         continue
 
-                    insert_values.append(
-                        (
-                            property_data["id"],
-                            current_time,
-                            channel,
-                            property_data["location"]["latitude"],
-                            property_data["location"]["longitude"],
-                        )
-                    )
+                    insert_values.append((
+                        property_data["id"],
+                        current_time,
+                        channel,
+                        property_data["location"]["latitude"],
+                        property_data["location"]["longitude"],
+                    ))
 
                 if len(insert_values) > 0:
                     sql = """

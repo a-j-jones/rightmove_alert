@@ -3,7 +3,13 @@ create table if not exists email_details
     email_address varchar(100) not null primary key
 );
 
-
+create table if not exists property_floorplan
+(
+    property_id   integer       not null primary key,
+    floorplan_url varchar(1000) not null,
+    area_sqft     double precision,
+    area_sqm      double precision
+);
 
 drop view if exists properties_review;
 drop view if exists alert_properties;
@@ -33,7 +39,7 @@ CREATE VIEW alert_properties AS
 SELECT ap.property_id,
        bedrooms,
        bathrooms,
-       area,
+       coalesce(ap.area, pf.area_sqft)                             as area,
        summary,
        address,
        property_subtype,
@@ -60,9 +66,10 @@ FROM properties_current ap
          LEFT JOIN traveltimeprecise tp ON ap.property_id = tp.property_id
          LEFT JOIN reviewedproperties r ON ap.property_id = r.property_id
          LEFT JOIN reviewdates rp ON r.reviewed_date = rp.reviewed_date
+         LEFT JOIN property_floorplan pf ON ap.property_id = pf.property_id
 WHERE price_amount BETWEEN 550000 AND 850000
   AND bedrooms >= 2
-  AND (area > 700 or area is null)
+  AND (coalesce(ap.area, pf.area_sqft) > 700 or coalesce(ap.area, pf.area_sqft) is null)
   AND NOT development
   AND NOT commercial
   AND NOT auction

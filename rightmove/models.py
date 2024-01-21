@@ -108,3 +108,10 @@ class TravelTimePrecise(BaseModel):
         primary_key=True,
     )
     travel_time: int = Field(default=None)
+
+
+class PropertyFloorplan(BaseModel):
+    property_id: int
+    floorplan_url: str
+    area_sqft: Optional[float]
+    area_sqm: Optional[float]
