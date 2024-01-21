@@ -7,15 +7,24 @@ import plotly.graph_objects as go
 def create_mapbox(properties: List[dict]) -> str:
 
     df = pd.DataFrame.from_records(properties)
-    df["symbol"] = "castle"
+    df["url"] = df.apply(
+        lambda x: f'<a href="{x["link"]}" style="color: #00dcb5;">{x["title"]}</a>',
+        axis=1,
+    )
+
+    hovertemplate = "<b>%{customdata[1]}</b><br>Price: %{customdata[0]}"
 
     fig = go.Figure(
         go.Scattermapbox(
             mode="markers",
             lon=df.longitude,
             lat=df.latitude,
-            marker={"size": 10},
+            customdata=df[["price", "url"]],
+            marker={"size": 10, "symbol": "castle", "allowoverlap": True},
             textposition="bottom right",
+            name="",
+            hovertemplate=hovertemplate,
+            hoverlabel={"namelength": -1, "bgcolor": "rgba(255, 255, 255, 0.9)"},
         )
     )
 
@@ -23,7 +32,7 @@ def create_mapbox(properties: List[dict]) -> str:
         mapbox={
             "accesstoken": "pk.eyJ1IjoiYWRhbWpvbmVzIiwiYSI6ImNrb3c0M3V6MDAya2QydnJ3cWtwN3VsZWQifQ.JBoPpcnRJE7AX_dq0YAOyA",
             "style": "basic",
-            "center": {"lon": 0.01, "lat": 51.5},
+            "center": {"lon": -0.1, "lat": 51.5},
             "zoom": 10,
         },
         margin=dict(l=5, r=5, t=5, b=5),
