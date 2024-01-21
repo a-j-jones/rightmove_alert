@@ -131,7 +131,7 @@ def update_locations():
     conn = psycopg2.connect(DATABASE_URI)
     cursor = conn.cursor()
 
-    model_executemany(cursor, "traveltimeprecise", travel_time_values)
+    model_executemany(cursor, "travel_time_precise", travel_time_values)
     model_executemany(cursor, "property_location_excluded", excluded_values)
 
     conn.commit()

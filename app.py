@@ -50,7 +50,7 @@ def favicon():
 @app.route("/")
 def index():
     # Get review dates:
-    sql = "select distinct email_id, str_date from reviewdates order by email_id desc"
+    sql = "select distinct email_id, str_date from review_dates order by email_id desc"
     items = pd.read_sql(sql, DATABASE_URI).to_records()
 
     new_properties = count_new_properties()
@@ -120,11 +120,11 @@ def delete_review():
     conn = psycopg2.connect(DATABASE_URI)
     cursor = conn.cursor()
 
-    cursor.execute(f"select reviewed_date from reviewdates where email_id={review_id}")
+    cursor.execute(f"select reviewed_date from review_dates where email_id={review_id}")
     date = cursor.fetchone()[0]
 
-    cursor.execute(f"delete from reviewdates where email_id={review_id}")
-    cursor.execute(f"delete from reviewedproperties where reviewed_date='{date}'")
+    cursor.execute(f"delete from review_dates where email_id={review_id}")
+    cursor.execute(f"delete from reviewed_properties where reviewed_date='{date}'")
 
     conn.commit()
 

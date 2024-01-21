@@ -120,7 +120,7 @@ def parse_added_or_reduced(added_or_reduced_str):
 def insert_property_images(cursor, property_images):
     # Insert property images into the database using executemany
     insert_query = """
-        INSERT INTO propertyimages (property_id, image_url, image_caption)
+        INSERT INTO property_images (property_id, image_url, image_caption)
         VALUES (%s, %s, %s)
         ON CONFLICT (property_id, image_url) DO NOTHING
     """
@@ -141,7 +141,7 @@ class RightmoveDatabase:
             with self.conn.cursor() as cursor:
                 current_time = dt.datetime.now()
                 cursor.execute(f"""
-                    UPDATE propertydata
+                    UPDATE property_data
                     SET property_validto = '{current_time}'
                     WHERE property_id IN ({','.join([str(id) for id in missing_ids])})
                 """)
@@ -162,8 +162,8 @@ class RightmoveDatabase:
                 current_time = dt.datetime.now()
                 sql = f"""
                         SELECT COUNT(DISTINCT pl.property_id)
-                        FROM propertylocation pl
-                        LEFT JOIN propertydata pd ON pl.property_id = pd.property_id
+                        FROM property_location pl
+                        LEFT JOIN property_data pd ON pl.property_id = pd.property_id
                         WHERE pl.property_channel = '{channel}'
                     """
                 if update:
@@ -201,8 +201,8 @@ class RightmoveDatabase:
 
                 sql = f"""
                     SELECT pl.property_id
-                    FROM propertylocation pl
-                    LEFT JOIN propertydata pd ON pl.property_id = pd.property_id
+                    FROM property_location pl
+                    LEFT JOIN property_data pd ON pl.property_id = pd.property_id
                     WHERE pl.property_channel = '{channel}'
                 """
 
@@ -251,7 +251,7 @@ class RightmoveDatabase:
                 cursor.execute(
                     f"""
                     SELECT property_id 
-                    FROM propertylocation 
+                    FROM property_location 
                     WHERE property_id IN ({','.join([str(p) for p in properties.keys()])})"""
                 )
                 existing_ids: set = {r[0] for r in cursor.fetchall()}
@@ -271,7 +271,7 @@ class RightmoveDatabase:
 
                 if len(insert_values) > 0:
                     sql = """
-                        INSERT INTO propertylocation (
+                        INSERT INTO property_location (
                             property_id,
                             property_asatdt,
                             property_channel,
@@ -285,7 +285,7 @@ class RightmoveDatabase:
         cursor = self.conn.cursor(cursor_factory=extras.DictCursor)
         try:
             # Retrieve existing property IDs from the database
-            cursor.execute("SELECT property_id FROM propertydata")
+            cursor.execute("SELECT property_id FROM property_data")
             existing_ids = {row["property_id"] for row in cursor.fetchall()}
 
             # Set validto for properties which are no longer on the Rightmove website:
@@ -301,7 +301,7 @@ class RightmoveDatabase:
                 # Check for an existing record which is currently valid:
                 cursor.execute(
                     """
-                    SELECT * FROM propertydata
+                    SELECT * FROM property_data
                     WHERE property_id = %s AND property_validto >= %s
                     """,
                     (property_id, current_time),
@@ -350,7 +350,7 @@ class RightmoveDatabase:
                     # Mark the existing record as no longer valid
                     cursor.execute(
                         """
-                        UPDATE propertydata
+                        UPDATE property_data
                         SET property_validto = %s
                         WHERE property_id = %s AND property_validto >= %s
                         """,
@@ -363,7 +363,7 @@ class RightmoveDatabase:
                     insert_list.append(property_data)
 
                 if insert_list:
-                    model_executemany(cursor, "propertydata", insert_list)
+                    model_executemany(cursor, "property_data", insert_list)
 
                 # Insert property images using executemany
                 property_images = [

@@ -12,14 +12,14 @@ def create_mapbox(properties: List[dict]) -> str:
         axis=1,
     )
 
-    hovertemplate = "<b>%{customdata[1]}</b><br>Price: %{customdata[0]}"
+    hovertemplate = "<b>%{customdata[0]}</b><br>%{customdata[1]}<br>%{customdata[2]}"
 
     fig = go.Figure(
         go.Scattermapbox(
             mode="markers",
             lon=df.longitude,
             lat=df.latitude,
-            customdata=df[["price", "url"]],
+            customdata=df[["url", "address", "price"]],
             marker={"size": 10, "symbol": "castle", "allowoverlap": True},
             textposition="bottom right",
             name="",
@@ -31,7 +31,7 @@ def create_mapbox(properties: List[dict]) -> str:
     fig.update_layout(
         mapbox={
             "accesstoken": "pk.eyJ1IjoiYWRhbWpvbmVzIiwiYSI6ImNrb3c0M3V6MDAya2QydnJ3cWtwN3VsZWQifQ.JBoPpcnRJE7AX_dq0YAOyA",
-            "style": "basic",
+            "style": "streets",
             "center": {"lon": -0.1, "lat": 51.5},
             "zoom": 10,
         },

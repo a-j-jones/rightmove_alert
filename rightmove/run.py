@@ -65,7 +65,7 @@ def mark_properties_reviewed() -> int | None:
     )
     property_ids = cursor.fetchall()
 
-    cursor.execute("select coalesce(max(email_id), 0) as last_id from reviewdates")
+    cursor.execute("select coalesce(max(email_id), 0) as last_id from review_dates")
     review_id = cursor.fetchone()[0] + 1
 
     if len(property_ids) == 0:
@@ -79,7 +79,7 @@ def mark_properties_reviewed() -> int | None:
         reviewed_date=review_date,
         str_date=review_date.strftime("%d-%b-%Y"),
     )
-    model_execute(cursor, table_name="reviewdates", value=review)
+    model_execute(cursor, table_name="review_dates", value=review)
 
     values = [
         ReviewedProperties(
@@ -87,7 +87,7 @@ def mark_properties_reviewed() -> int | None:
         )
         for property_id in property_ids
     ]
-    model_executemany(cursor, table_name="reviewedproperties", values=values)
+    model_executemany(cursor, table_name="reviewed_properties", values=values)
 
     conn.commit()
     cursor.close()
