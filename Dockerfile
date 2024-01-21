@@ -15,6 +15,9 @@ RUN apt-get update && \
 # Install bootstrap-email gem
 RUN gem install bootstrap-email
 
+# Install Tesseract
+RUN apt install -y tesseract-ocr
+
 # Install Python dependencies
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt

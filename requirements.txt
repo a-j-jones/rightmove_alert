@@ -9,7 +9,6 @@ numba
 flask
 traveltimepy
 waitress
-google-auth
-google-auth-oauthlib
-google-auth-httplib2
-google-api-python-client
+pytesseract
+imageio
+bs4
