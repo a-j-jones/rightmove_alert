@@ -12,3 +12,4 @@ waitress
 pytesseract
 imageio
 bs4
+plotly

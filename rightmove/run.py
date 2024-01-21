@@ -99,9 +99,7 @@ def mark_properties_reviewed() -> int | None:
 def get_properties(sql_filter):
     sql = f"""
     select * from alert_properties
-    where 
-        travel_time < 45
-        and {sql_filter}
+    where {sql_filter}
     """
 
     # Reading data from CSV
@@ -119,6 +117,8 @@ def get_properties(sql_filter):
             "description": property.summary,
             "price": f"£{property.price_amount:,.0f}",
             "travel_time": travel_time,
+            "longitude": property.longitude,
+            "latitude": property.latitude,
         }
 
         if type(property["images"]) == str:

@@ -21,6 +21,7 @@ from rightmove.database import get_email_addresses, set_email_addresses
 from rightmove.floorplan import update_floorplans
 from rightmove.geolocation import update_locations
 from rightmove.models import EmailAddress
+from rightmove.plotting import create_mapbox
 from rightmove.run import (
     download_properties,
     download_property_data,
@@ -71,6 +72,7 @@ def email_template():
 
     new_properties = count_new_properties()
     properties = get_properties(review_filter)
+    graph = create_mapbox(properties)
 
     return render_template(
         "template.html",
@@ -78,6 +80,7 @@ def email_template():
         properties=properties,
         review_id=review_id,
         new_properties=new_properties,
+        graph=graph,
     )
 
 

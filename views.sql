@@ -83,11 +83,11 @@ WHERE price_amount BETWEEN 550000 AND 850000
   AND LOWER(summary) LIKE '%garden%'
   AND last_rightmove_update > TO_CHAR(CURRENT_DATE - INTERVAL '30 days', 'YYYY-MM-DD')
   AND (not ple.excluded or ple.excluded is null)
+  AND (travel_time <= 40 or tp.property_id is null)
 ;
 
 CREATE VIEW properties_review AS
 SELECT *
 FROM alert_properties
-WHERE travel_time <= 45
 ORDER BY review_id DESC
 ;

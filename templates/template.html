@@ -5,12 +5,17 @@
         {% if review_id == 'latest' %}
             <a class="btn btn-primary fw-semibold" href="{{ url_for('review_latest') }}" role="button">Mark reviewed</a>
         {% else %}
-            <a class="btn btn-primary fw-semibold" href="{{ url_for('send', id=review_id) }}" role="button">Send email</a>
+            <a class="btn btn-primary fw-semibold" href="{{ url_for('send', id=review_id) }}" role="button">Send
+                email</a>
         {% endif %}
     </div>
 {% endblock %}
 
 {% block content %}
+    <div class="card my-3 p-2">
+        {{ graph|safe }}
+    </div>
+
     {% for property in properties %}
         <div class="card my-3 p-2">
             <div class="card-body">
