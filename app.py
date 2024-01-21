@@ -18,6 +18,7 @@ from config import IS_WINDOWS, DATABASE_URI
 from config.logging import logging_setup
 from email_data.send_email import prepare_email_html, send_email
 from rightmove.database import get_email_addresses, set_email_addresses
+from rightmove.floorplan import update_floorplans
 from rightmove.geolocation import update_locations
 from rightmove.models import EmailAddress
 from rightmove.run import (
@@ -92,6 +93,7 @@ def download():
     asyncio.run(download_properties("BUY"))
     asyncio.run(download_property_data(update=False))
     update_locations()
+    update_floorplans()
 
     return redirect(url_for("index"))
 
@@ -145,7 +147,10 @@ def update_settings():
 
 def count_new_properties() -> str:
     # Get count of new properties:
-    sql = "select count(*) from alert_properties where travel_time < 45 and review_id is null"
+    sql = (
+        "select count(*) from alert_properties where travel_time < 45 and review_id is"
+        " null"
+    )
     count_props = pd.read_sql(sql, DATABASE_URI).values[0][0]
 
     new_properties = ""

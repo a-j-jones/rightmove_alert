@@ -5,8 +5,8 @@ create table if not exists email_details
 
 create table if not exists property_floorplan
 (
-    property_id   integer       not null primary key,
-    floorplan_url varchar(1000) not null,
+    property_id   integer not null primary key,
+    floorplan_url varchar(1000),
     area_sqft     double precision,
     area_sqm      double precision
 );

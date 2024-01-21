@@ -112,6 +112,6 @@ class TravelTimePrecise(BaseModel):
 
 class PropertyFloorplan(BaseModel):
     property_id: int
-    floorplan_url: str
-    area_sqft: Optional[float]
-    area_sqm: Optional[float]
+    floorplan_url: Optional[str] = Field(default=None)
+    area_sqft: Optional[float] = Field(default=None)
+    area_sqm: Optional[float] = Field(default=None)
