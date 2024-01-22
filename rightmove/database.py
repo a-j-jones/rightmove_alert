@@ -2,9 +2,9 @@ import datetime as dt
 import re
 from typing import List, Set
 
+import asyncpg
 import pandas as pd
 import psycopg2
-from psycopg2 import extras
 from pydantic import BaseModel
 
 from config import DATABASE_URI
@@ -205,6 +205,34 @@ def model_executemany(cursor, table_name: str, values: List[BaseModel]):
     )
 
 
+async def model_executemany_async(connection, table_name: str, values: List[BaseModel]):
+    """
+    Insert a list of pydantic models into a database table using executemany.
+
+    Args:
+        cursor: The database cursor.
+        table_name (str): The name of the table in the database.
+        values (List[BaseModel]): The list of pydantic models to be inserted into the database.
+    """
+    if len(values) == 0:
+        return
+
+    # Get the model fields
+    model_field_names = [field for field in values[0].model_fields]
+
+    # Construct the insert query
+    value_string = ",".join([f"${i+1}" for i in range(len(model_field_names))])
+    insert_query = f"""
+        INSERT INTO {table_name} ({','.join(model_field_names)})
+        VALUES ({value_string})
+    """
+
+    # Insert the values using executemany
+    await connection.executemany(
+        insert_query, [tuple(model.model_dump().values()) for model in values]
+    )
+
+
 def parse_area(area_str):
     """
     Parse the area from a string.
@@ -247,7 +275,7 @@ def parse_added_or_reduced(added_or_reduced_str):
     return added_or_reduced
 
 
-def insert_property_images(cursor, property_images):
+async def insert_property_images(cursor, property_images):
     """
     Insert property images into the database using executemany.
 
@@ -259,116 +287,79 @@ def insert_property_images(cursor, property_images):
     # Insert property images into the database using executemany
     insert_query = """
         INSERT INTO property_images (property_id, image_url, image_caption)
-        VALUES (%s, %s, %s)
+        VALUES ($1, $2, $3)
         ON CONFLICT (property_id, image_url) DO NOTHING
     """
-    cursor.executemany(insert_query, property_images)
+    await cursor.executemany(insert_query, property_images)
 
 
 class RightmoveDatabase:
-    def __init__(self):
-        self.conn = psycopg2.connect(DATABASE_URI)
-        self.conn.autocommit = False
+    async def __aenter__(self):
+        self.conn = await asyncpg.connect(DATABASE_URI)
+        return self
 
-    def _close_missing_properties(self, missing_ids: Set[int]) -> None:
-        """
-        Closes the validto variable for properties which are no longer on the Rightmove website.
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.conn.close()
 
-        Args:
-            missing_ids (Set[int]): A set of IDs for the properties which are no longer on the Rightmove website.
-        """
-        with self.conn:
-            with self.conn.cursor() as cursor:
-                current_time = dt.datetime.now()
-                cursor.execute(f"""
-                    UPDATE property_data
-                    SET property_validto = '{current_time}'
-                    WHERE property_id IN ({','.join([str(id) for id in missing_ids])})
-                """)
+    async def _close_missing_properties(self, missing_ids: Set[int]) -> None:
+        current_time = dt.datetime.now()
+        await self.conn.execute(f"""
+            UPDATE property_data
+            SET property_validto = '{current_time}'
+            WHERE property_id IN ({','.join([str(id) for id in missing_ids])})
+        """)
 
-    def get_id_len(self, update, channel, update_cutoff=None):
-        """
-        Returns the number of property IDs that would be returned in the get_id_list() function.
+    async def get_id_len(self, update, channel, update_cutoff=None):
+        current_time = dt.datetime.now()
+        sql = f"""
+                SELECT COUNT(DISTINCT pl.property_id)
+                FROM property_location pl
+                LEFT JOIN property_data pd ON pl.property_id = pd.property_id
+                WHERE pl.property_channel = '{channel}'
+            """
+        if update:
+            if update_cutoff:
+                sql += f"""
+                                AND (
+                                    (pd.last_update < '{update_cutoff}' OR pd.last_update IS NULL)
+                                    AND pd.property_validto >= '{current_time}'
+                                    OR pd.property_id IS NULL
+                                )
+                            """
+        else:
+            sql += "AND pd.property_id IS NULL"
 
-        Args:
-            update (bool): If True then the list will not filter for only those properties with no existing data.
-            update_cutoff (dt.datetime): If update=True then a cutoff for last update can be used.
-            channel (str): The channel which should be searched (RENT/BUY).
+        result = await self.conn.fetchrow(sql)
 
-        Returns:
-            int: Number of properties which would be in the list.
-        """
+        return result[0]
 
-        with self.conn:
-            with self.conn.cursor() as cursor:
-                current_time = dt.datetime.now()
-                sql = f"""
-                        SELECT COUNT(DISTINCT pl.property_id)
-                        FROM property_location pl
-                        LEFT JOIN property_data pd ON pl.property_id = pd.property_id
-                        WHERE pl.property_channel = '{channel}'
-                    """
-                if update:
-                    if update_cutoff:
-                        sql += f"""
-                                        AND (
-                                            (pd.last_update < '{update_cutoff}' OR pd.last_update IS NULL)
-                                            AND pd.property_validto >= '{current_time}'
-                                            OR pd.property_id IS NULL
-                                        )
-                                    """
-                else:
-                    sql += "AND pd.property_id IS NULL"
+    async def get_id_list(self, update: bool, channel: str, update_cutoff=None):
+        current_time = dt.datetime.now()
 
-                cursor.execute(sql)
-                result = cursor.fetchone()[0]
-
-                return result
-
-    def get_id_list(
-        self, update: bool, channel: str, update_cutoff=None
-    ) -> List[List[int]]:
-        """
-        Generator for a list of IDs which can be used to search the Rightmove API, this list will be a
-        maximum size of 25, and the generator will stop once all IDs have been yielded.
-
-        Args:
-            update (bool): If True then the list will not filter for only those properties with no existing data.
-            update_cutoff (dt.datetime): If update=True then a cutoff for last update can be used.
-            channel (str): The channel which should be searched (RENT/BUY).
-
-        Returns:
-            List[List[int]]: A list of Property ID integers.
+        sql = f"""
+            SELECT pl.property_id
+            FROM property_location pl
+            LEFT JOIN property_data pd ON pl.property_id = pd.property_id
+            WHERE pl.property_channel = '{channel}'
         """
 
-        with self.conn:
-            with self.conn.cursor() as cursor:
-                current_time = dt.datetime.now()
-
-                sql = f"""
-                    SELECT pl.property_id
-                    FROM property_location pl
-                    LEFT JOIN property_data pd ON pl.property_id = pd.property_id
-                    WHERE pl.property_channel = '{channel}'
+        if update:
+            if update_cutoff:
+                sql += f"""
+                    AND (
+                        (pd.last_update < '{update_cutoff}' OR pd.last_update IS NULL)
+                        AND pd.property_validto >= '{current_time}'
+                        OR pd.property_id IS NULL
+                    )
                 """
 
-                if update:
-                    if update_cutoff:
-                        sql += f"""
-                            AND (
-                                (pd.last_update < '{update_cutoff}' OR pd.last_update IS NULL)
-                                AND pd.property_validto >= '{current_time}'
-                                OR pd.property_id IS NULL
-                            )
-                        """
+        else:
+            sql += "AND pd.property_id IS NULL"
 
-                else:
-                    sql += "AND pd.property_id IS NULL"
+        records = await self.conn.fetch(sql)
+        ids = []
 
-                cursor.execute(sql)
-                ids = []
-
-                results = set([x[0] for x in cursor.fetchall()])
+        results = set([x[0] for x in records])
 
         for result in results:
             ids.append(result)
@@ -378,180 +369,142 @@ class RightmoveDatabase:
         if len(ids) > 0:
             yield ids
 
-    def load_map_properties(self, properties: dict, channel: str) -> None:
-        """
-        Loads the data obtained from the Rightmove API into the database.
-        :param properties:      Dictionary      JSON response from the Rightmove API.
-        :param channel          String          The channel which searched for in the API.
-        """
-        with self.conn:
-            with self.conn.cursor() as cursor:
-                current_time = dt.datetime.now()
-                channel = channel.upper()
+    async def load_map_properties(self, properties: dict, channel: str) -> None:
+        current_time = dt.datetime.now()
+        channel = channel.upper()
 
-                # Check for existing IDs in the database:
-                if len(properties) == 0:
-                    cursor.close()
-                    return
+        if len(properties) == 0:
+            return
 
-                cursor.execute(
-                    f"""
-                    SELECT property_id 
-                    FROM property_location 
-                    WHERE property_id IN ({','.join([str(p) for p in properties.keys()])})"""
-                )
-                existing_ids: set = {r[0] for r in cursor.fetchall()}
+        existing_ids = await self.conn.fetch(f"""
+                    SELECT property_id
+                    FROM property_location
+                    WHERE property_id IN ({','.join([str(p) for p in properties.keys()])})
+                    """)
+        existing_ids: set = {r[0] for r in existing_ids}
 
-                insert_values = []
-                for property_data in properties.values():
-                    if property_data["id"] in existing_ids:
-                        continue
+        insert_values = []
+        for property_data in properties.values():
+            if property_data["id"] in existing_ids:
+                continue
 
-                    insert_values.append((
-                        property_data["id"],
-                        current_time,
-                        channel,
-                        property_data["location"]["latitude"],
-                        property_data["location"]["longitude"],
-                    ))
+            insert_values.append((
+                property_data["id"],
+                current_time,
+                channel,
+                property_data["location"]["latitude"],
+                property_data["location"]["longitude"],
+            ))
 
-                if len(insert_values) > 0:
-                    sql = """
-                        INSERT INTO property_location (
-                            property_id,
-                            property_asatdt,
-                            property_channel,
-                            property_latitude,
-                            property_longitude
-                        ) VALUES (%s, %s, %s, %s, %s)
-                        """
-                    extras.execute_batch(cursor, sql, insert_values)
+        if len(insert_values) > 0:
+            sql = """
+                INSERT INTO property_location (
+                    property_id,
+                    property_asatdt,
+                    property_channel,
+                    property_latitude,
+                    property_longitude
+                ) VALUES ($1, $2, $3, $4, $5)
+            """
+            await self.conn.executemany(sql, insert_values)
 
-    def load_property_data(self, data: dict, ids: list[int]) -> None:
-        cursor = self.conn.cursor(cursor_factory=extras.DictCursor)
-        try:
-            # Retrieve existing property IDs from the database
-            cursor.execute("SELECT property_id FROM property_data")
-            existing_ids = {row["property_id"] for row in cursor.fetchall()}
+    async def load_property_data(self, data: dict, ids: list[int]) -> None:
+        current_time = dt.datetime.now()
 
-            # Set validto for properties which are no longer on the Rightmove website:
-            missing_ids = set(ids) - existing_ids
-            if missing_ids:
-                self._close_missing_properties(missing_ids)
+        records = await self.conn.fetch("SELECT property_id FROM property_data")
+        existing_ids = {row["property_id"] for row in records}
 
-            current_time = dt.datetime.now()
+        missing_ids = set(ids) - existing_ids
+        if missing_ids:
+            await self._close_missing_properties(missing_ids)
 
-            for prop in data:
-                property_id = prop["id"]
+        for prop in data:
+            property_id = prop["id"]
 
-                # Check for an existing record which is currently valid:
-                cursor.execute(
+            records = await self.conn.fetch(
+                """
+                SELECT * FROM property_data
+                WHERE property_id = $1 AND property_validto >= $2
+                """,
+                property_id,
+                current_time,
+            )
+            existing_record = records[0] if records else None
+
+            area_str = prop.get("displaySize")
+            area = parse_area(area_str)
+
+            added_or_reduced = parse_added_or_reduced(prop.get("addedOrReduced"))
+
+            first_visible = pd.to_datetime(prop["firstVisibleDate"])
+            if first_visible.tzinfo is not None:
+                first_visible = first_visible.replace(tzinfo=None)
+
+            property_data = PropertyData(
+                property_id=property_id,
+                property_validfrom=current_time,
+                bedrooms=prop["bedrooms"],
+                bathrooms=prop.get("bathrooms"),
+                area=area,
+                summary=prop.get("summary"),
+                address=prop["displayAddress"],
+                property_subtype=prop["propertySubType"],
+                property_description=prop["propertyTypeFullDescription"],
+                premium_listing=prop["premiumListing"],
+                price_amount=prop["price"]["amount"],
+                price_frequency=prop["price"]["frequency"],
+                price_qualifier=prop["price"]["displayPrices"][0].get(
+                    "displayPriceQualifier"
+                ),
+                lettings_agent=prop["customer"]["brandTradingName"],
+                lettings_agent_branch=prop["customer"]["branchName"],
+                development=prop["development"],
+                commercial=prop["commercial"],
+                enhanced_listing=prop["enhancedListing"],
+                students=prop["students"],
+                auction=prop["auction"],
+                last_update=current_time,
+                first_visible=first_visible,
+                last_displayed_update=added_or_reduced,
+            )
+
+            insert_list = []
+            if existing_record and self.has_changes(existing_record, property_data):
+                await self.conn.execute(
                     """
-                    SELECT * FROM property_data
-                    WHERE property_id = %s AND property_validto >= %s
+                    UPDATE property_data
+                    SET property_validto = $1
+                    WHERE property_id = $2 AND property_validto >= $3
                     """,
-                    (property_id, current_time),
+                    current_time,
+                    property_id,
+                    current_time,
                 )
-                existing_record = cursor.fetchone()
+                insert_list.append(property_data)
+            elif not existing_record:
+                insert_list.append(property_data)
 
-                # Parse the Area of the property:
-                area_str = prop.get("displaySize")
-                area = parse_area(area_str)
+            if insert_list:
+                await model_executemany_async(self.conn, "property_data", insert_list)
 
-                # Get the 'display update date':
-                added_or_reduced = parse_added_or_reduced(prop.get("addedOrReduced"))
-
-                # Construct the property data dictionary
-                property_data = PropertyData(
-                    property_id=property_id,
-                    property_validfrom=current_time,
-                    bedrooms=prop["bedrooms"],
-                    bathrooms=prop.get("bathrooms"),
-                    area=area,
-                    summary=prop.get("summary"),
-                    address=prop["displayAddress"],
-                    property_subtype=prop["propertySubType"],
-                    property_description=prop["propertyTypeFullDescription"],
-                    premium_listing=prop["premiumListing"],
-                    price_amount=prop["price"]["amount"],
-                    price_frequency=prop["price"]["frequency"],
-                    price_qualifier=prop["price"]["displayPrices"][0].get(
-                        "displayPriceQualifier"
-                    ),
-                    lettings_agent=prop["customer"]["brandTradingName"],
-                    lettings_agent_branch=prop["customer"]["branchName"],
-                    development=prop["development"],
-                    commercial=prop["commercial"],
-                    enhanced_listing=prop["enhancedListing"],
-                    students=prop["students"],
-                    auction=prop["auction"],
-                    last_update=current_time,
-                    first_visible=pd.to_datetime(prop["firstVisibleDate"]),
-                    last_displayed_update=added_or_reduced,
-                )
-
-                insert_list = []
-                # Check for changes in property data
-                if existing_record and self.has_changes(existing_record, property_data):
-                    # Mark the existing record as no longer valid
-                    cursor.execute(
-                        """
-                        UPDATE property_data
-                        SET property_validto = %s
-                        WHERE property_id = %s AND property_validto >= %s
-                        """,
-                        (current_time, property_id, current_time),
-                    )
-                    # Insert a new record with updated data
-                    insert_list.append(property_data)
-                elif not existing_record:
-                    # Insert a new record if no existing record is found
-                    insert_list.append(property_data)
-
-                if insert_list:
-                    model_executemany(cursor, "property_data", insert_list)
-
-                # Insert property images using executemany
-                property_images = [
-                    (property_id, img_data["srcUrl"], img_data["caption"])
-                    for img_data in prop["propertyImages"]["images"]
-                ]
-                if property_images:
-                    insert_property_images(cursor, property_images)
-
-            # Commit the transaction
-            self.conn.commit()
-
-        except Exception as e:
-            # Handle exceptions and log if needed
-            print(f"Error: {e}")
-
-        finally:
-            # Close the database connection
-            if cursor:
-                cursor.close()
+            property_images = [
+                (property_id, img_data["srcUrl"], img_data["caption"])
+                for img_data in prop["propertyImages"]["images"]
+            ]
+            if property_images:
+                await insert_property_images(self.conn, property_images)
 
     def has_changes(self, existing_record, data):
-        """
-        Check if there are changes between the existing record and new data.
-
-        Parameters:
-        - existing_record: Dictionary representing the existing record in the database.
-        - new_data: Dictionary representing the new data to be compared.
-
-        Returns:
-        - True if there are changes, False otherwise.
-        """
         new_data = data.model_dump()
         for key, value in new_data.items():
             if key in ["property_validfrom", "first_visible", "last_update"]:
-                continue  # Skip these keys as they are not considered for changes
+                continue
 
             existing_value = existing_record.get(key)
             if existing_value != value:
-                return True  # Changes found
+                return True
 
-        return False  # No changes
+        return False
 
 
 def mark_properties_reviewed() -> int | None:

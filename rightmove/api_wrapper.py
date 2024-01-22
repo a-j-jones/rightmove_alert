@@ -14,7 +14,10 @@ logger = logging.getLogger(__name__)
 logger = logging_setup(logger)
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like"
+        " Gecko) Chrome/120.0.0.0 Safari/537.36"
+    )
 }
 
 
@@ -45,7 +48,9 @@ class Rightmove:
         :return:                Region code to use in map searches.
         """
         region_search = region_search.upper()
-        url = f'https://www.rightmove.co.uk/typeAhead/uknostreet/{"/".join(wrap(region_search, 2))}/'
+        url = (
+            f'https://www.rightmove.co.uk/typeAhead/uknostreet/{"/".join(wrap(region_search, 2))}/'
+        )
         r = requests.get(url, headers=HEADERS)
         if r.status_code != 200:
             logger.debug("Region search failed.")
@@ -113,7 +118,8 @@ class Rightmove:
 
         if type(channel) != str or channel.upper() not in ["BUY", "RENT"]:
             raise ValueError(
-                f"Expected string value of either 'BUY'/'RENT' for channel, got: {channel}"
+                "Expected string value of either 'BUY'/'RENT' for channel, got:"
+                f" {channel}"
             )
 
         if type(index) != int or index < 0:
@@ -201,7 +207,8 @@ class Rightmove:
 
         if type(channel) != str or channel.upper() not in ["BUY", "RENT"]:
             raise ValueError(
-                f"Expected string value of either 'BUY'/'RENT' for channel, got: {channel}"
+                "Expected string value of either 'BUY'/'RENT' for channel, got:"
+                f" {channel}"
             )
 
         params = {"channel": channel.upper(), "propertyIds": ids, "viewType": "MAP"}
@@ -217,7 +224,7 @@ class Rightmove:
 
         try:
             data = r.json()["properties"]
-            self.database.load_property_data(data, ids)
+            await self.database.load_property_data(data, ids)
         except JSONDecodeError:
             data = None
 
@@ -226,10 +233,10 @@ class Rightmove:
 
         return data
 
-    def save_property_data(self, channel) -> None:
+    async def save_property_data(self, channel) -> None:
         """
         Loads the property data into the database.
         """
         logger.info("Saving property data to database...")
-        self.database.load_map_properties(self.properties, channel=channel)
+        await self.database.load_map_properties(self.properties, channel=channel)
         self.properties = {}
