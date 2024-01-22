@@ -21,6 +21,8 @@ from rightmove.database import (
     get_property_reviews,
     delete_property_review,
     get_new_property_count,
+    mark_properties_reviewed,
+    get_properties,
 )
 from rightmove.floorplan import update_floorplans
 from rightmove.geolocation import update_locations
@@ -29,8 +31,6 @@ from rightmove.plotting import create_mapbox
 from rightmove.run import (
     download_properties,
     download_property_data,
-    get_properties,
-    mark_properties_reviewed,
 )
 
 app = Flask(__name__)

@@ -14,8 +14,7 @@ from requests import HTTPError
 
 from config import BASE_DIR, BOOTSTRAP_UTIL, DATA, TEMPLATES
 from config.logging import logging_setup
-from rightmove.database import get_email_addresses
-from rightmove.run import get_properties
+from rightmove.database import get_email_addresses, get_properties
 
 logger = logging.getLogger(__name__)
 logger = logging_setup(logger)

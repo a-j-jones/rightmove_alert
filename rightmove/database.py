@@ -8,7 +8,13 @@ from psycopg2 import extras
 from pydantic import BaseModel
 
 from config import DATABASE_URI
-from rightmove.models import PropertyData, EmailAddress, PropertyFloorplan
+from rightmove.models import (
+    PropertyData,
+    EmailAddress,
+    PropertyFloorplan,
+    ReviewDates,
+    ReviewedProperties,
+)
 
 
 def get_database_connection():
@@ -175,8 +181,8 @@ def insert_property_images(cursor, property_images):
 
 
 class RightmoveDatabase:
-    def __init__(self, database_uri):
-        self.conn = psycopg2.connect(database_uri)
+    def __init__(self):
+        self.conn = psycopg2.connect(DATABASE_URI)
         self.conn.autocommit = False
 
     def _close_missing_properties(self, missing_ids: Set[int]) -> None:
@@ -453,3 +459,77 @@ class RightmoveDatabase:
                 return True  # Changes found
 
         return False  # No changes
+
+
+def mark_properties_reviewed() -> int | None:
+    with get_database_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "select distinct property_id from alert_properties where"
+                " property_reviewed = 0"
+            )
+            property_ids = cursor.fetchall()
+
+            cursor.execute(
+                "select coalesce(max(email_id), 0) as last_id from review_dates"
+            )
+            review_id = cursor.fetchone()[0] + 1
+
+            if len(property_ids) == 0:
+                return None
+
+            review_date = dt.datetime.now()
+            review = ReviewDates(
+                email_id=review_id,
+                reviewed_date=review_date,
+                str_date=review_date.strftime("%d-%b-%Y"),
+            )
+            model_execute(cursor, table_name="review_dates", value=review)
+
+            values = [
+                ReviewedProperties(
+                    property_id=property_id[0], reviewed_date=review_date, emailed=False
+                )
+                for property_id in property_ids
+            ]
+            model_executemany(cursor, table_name="reviewed_properties", values=values)
+
+            return review_id
+
+
+def get_properties(sql_filter: str) -> List[dict]:
+    sql = f"""
+    select * from alert_properties
+    where {sql_filter}
+    """
+
+    # Reading data from CSV
+    df = pd.read_sql(sql, DATABASE_URI)
+
+    properties = []
+    for index, property in df.iterrows():
+        travel_time = f"About {property.travel_time} minutes"
+
+        data = {
+            "link": f"https://www.rightmove.co.uk/properties/{property.property_id}",
+            "title": property.property_description,
+            "address": property.address,
+            "status": f"Last update {property.last_update}",
+            "description": property.summary,
+            "price": f"£{property.price_amount:,.0f}",
+            "travel_time": travel_time,
+            "longitude": property.longitude,
+            "latitude": property.latitude,
+        }
+
+        if type(property["images"]) == str:
+            data["images"] = [
+                {"url": img.strip().replace("171x162", "476x317"), "alt": "Property"}
+                for img in property["images"].split(",")
+            ][:2]
+        else:
+            data["images"] = []
+
+        properties.append(data)
+
+    return properties
