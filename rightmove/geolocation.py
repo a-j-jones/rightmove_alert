@@ -6,12 +6,14 @@ from pathlib import Path
 import numba
 import numpy as np
 import pandas as pd
-import psycopg2
 from numba import njit
 
-from config import DATABASE_URI
 from config.logging import logging_setup
-from rightmove.database import model_executemany
+from rightmove.database import (
+    model_executemany,
+    get_location_dataframe,
+    get_database_connection,
+)
 from rightmove.models import PropertyLocationExcluded, TravelTimePrecise
 
 logger = logging.getLogger(__name__)
@@ -70,8 +72,7 @@ def update_locations():
     """
     Updates the locations with the travel time data
     """
-    sql = "SELECT * FROM alert_properties where travel_reviewed = 0"
-    df = pd.read_sql(sql, DATABASE_URI)
+    df = get_location_dataframe()
 
     if len(df) == 0:
         logger.info("No new properties found.")
@@ -128,15 +129,11 @@ def update_locations():
         travel_time_values.append(TravelTimePrecise(**row.to_dict()))
         excluded_values.append(PropertyLocationExcluded(**row.to_dict()))
 
-    conn = psycopg2.connect(DATABASE_URI)
-    cursor = conn.cursor()
-
-    model_executemany(cursor, "travel_time_precise", travel_time_values)
-    model_executemany(cursor, "property_location_excluded", excluded_values)
-
-    conn.commit()
-    cursor.close()
-    conn.close()
+    with get_database_connection() as conn:
+        with conn.cursor() as cursor:
+            model_executemany(cursor, "travel_time_precise", travel_time_values)
+            model_executemany(cursor, "property_location_excluded", excluded_values)
+            conn.commit()
 
 
 if __name__ == "__main__":

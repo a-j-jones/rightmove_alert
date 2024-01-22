@@ -91,6 +91,17 @@ def insert_floorplans(floorplans: List[PropertyFloorplan]) -> None:
             model_executemany(cursor, "property_floorplan", floorplans)
 
 
+def get_location_dataframe() -> pd.DataFrame:
+    """
+    Gets the details of properties which require a travel time calculation.
+    """
+
+    sql = "SELECT * FROM alert_properties where travel_reviewed = 0"
+    df = pd.read_sql(sql, DATABASE_URI)
+
+    return df
+
+
 def model_execute(cursor, table_name: str, value: BaseModel):
     """
     Insert a pydantic model into a database table using execute.
