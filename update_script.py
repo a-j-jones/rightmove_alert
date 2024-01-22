@@ -20,7 +20,7 @@ def main():
     # Download the latest properties and data:
     logger.info("Downloading properties and data...")
     asyncio.run(download_properties("BUY"))
-    asyncio.run(download_property_data(update=False))
+    asyncio.run(download_property_data(update=True))
 
     # Update geolocation data:
     logger.info("Updating geolocation data...")

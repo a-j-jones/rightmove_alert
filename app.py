@@ -98,6 +98,7 @@ def download():
     asyncio.run(download_property_data(update=False))
     update_locations()
     update_floorplans()
+    logger.info("Download complete")
 
     return redirect(url_for("index"))
 
