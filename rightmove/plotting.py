@@ -5,6 +5,16 @@ import plotly.graph_objects as go
 
 
 def create_mapbox(properties: List[dict]) -> str:
+    """
+    Create a Mapbox plot using Plotly for a list of properties.
+
+    Args:
+        properties (List[dict]): A list of dictionaries where each dictionary represents a property.
+                                 Each dictionary should have the keys: 'longitude', 'latitude', 'link', 'title', 'address', and 'price'.
+
+    Returns:
+        str: A string of the HTML representation of the Mapbox plot.
+    """
 
     df = pd.DataFrame.from_records(properties)
     df["url"] = df.apply(

@@ -107,7 +107,7 @@ SELECT CURRENT_TIMESTAMP                                                        
                'YYYY-MM-DD')                                                                   AS last_rightmove_update,
        ROUND(EXTRACT(EPOCH FROM sd.model_date) - EXTRACT(EPOCH FROM pd.first_visible) / 86400) AS days_old
 FROM property_data AS pd
-         LEFT JOIN property_location AS pl ON pd.property_id = pl.property_id
+         LEFT JOIN property_location AS pl using (property_id)
          FULL JOIN start_date AS sd ON 1 = 1
 WHERE CURRENT_TIMESTAMP BETWEEN pd.property_validfrom AND pd.property_validto;
 
@@ -139,11 +139,11 @@ SELECT ap.property_id,
         FROM property_images pi
         WHERE pi.property_id = ap.property_id)                     AS images
 FROM properties_current ap
-         LEFT JOIN travel_time_precise tp ON ap.property_id = tp.property_id
-         LEFT JOIN property_location_excluded ple ON ap.property_id = ple.property_id
-         LEFT JOIN reviewed_properties r ON ap.property_id = r.property_id
-         LEFT JOIN review_dates rp ON r.reviewed_date = rp.reviewed_date
-         LEFT JOIN property_floorplan pf ON ap.property_id = pf.property_id
+         LEFT JOIN travel_time_precise tp using (property_id)
+         LEFT JOIN property_location_excluded ple using (property_id)
+         LEFT JOIN reviewed_properties r using (property_id)
+         LEFT JOIN review_dates rp using (reviewed_date)
+         LEFT JOIN property_floorplan pf using (property_id)
 WHERE price_amount BETWEEN 550000 AND 850000
   AND bedrooms >= 2
   AND (coalesce(ap.area, pf.area_sqft) > 700 or coalesce(ap.area, pf.area_sqft) is null)

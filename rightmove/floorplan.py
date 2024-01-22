@@ -111,10 +111,13 @@ FLOORPAN_REGEX = re.compile("_FLP_00_")
 
 def get_floorplan_urls(property_id: int) -> List[str]:
     """
-    Gets the floorplan image for a given property ID.
+    Get a list of URLs for the floorplans of a given property ID.
 
-    :param property_id:     Property ID to get floorplan for.
-    :return:                Bytes of floorplan image.
+    Args:
+        property_id (int): The ID of the property.
+
+    Returns:
+        List[str]: A list of URLs of the floorplans.
     """
     url = f"https://www.rightmove.co.uk/properties/{property_id}#/"
     r = requests.get(url, headers={"User-Agent": random.choice(USER_AGENTS)})
@@ -135,10 +138,13 @@ def get_floorplan_urls(property_id: int) -> List[str]:
 
 def download_img(url: str) -> np.ndarray:
     """
-    Downloads an image from a given URL.
+    Download an image from a given URL.
 
-    :param url:     URL to download image from.
-    :return:        Image as a NumPy array.
+    Args:
+        url (str): The URL of the image.
+
+    Returns:
+        np.ndarray: The downloaded image as a NumPy array.
     """
     r = requests.get(url, headers={"User-Agent": random.choice(USER_AGENTS)})
 
@@ -153,10 +159,13 @@ def download_img(url: str) -> np.ndarray:
 
 def extract_text(img: np.ndarray) -> str:
     """
-    Extracts text from an image using pytesseract.
+    Extract text from an image using pytesseract.
 
-    :param img:     Image to extract text from.
-    :return:        Text extracted from image.
+    Args:
+        img (np.ndarray): The image to extract text from.
+
+    Returns:
+        str: The extracted text.
     """
 
     text = pytesseract.image_to_string(img)
@@ -164,6 +173,16 @@ def extract_text(img: np.ndarray) -> str:
 
 
 def extract_internal_area(text):
+    """
+    Extract the internal area from the text extracted from an image.
+
+    Args:
+        text (str): The text to extract the internal area from.
+
+    Returns:
+        dict: A dictionary with keys 'sqft' and 'sqm' and their corresponding values.
+    """
+
     # Preprocessing
     cleaned_text = text.lower()
     sqm_out = None
@@ -239,6 +258,16 @@ def extract_internal_area(text):
 
 
 def get_floorplan(id: int) -> PropertyFloorplan:
+    """
+    Get the floorplan data of a given property ID.
+
+    Args:
+        id (int): The ID of the property.
+
+    Returns:
+        PropertyFloorplan: An instance of the PropertyFloorplan class.
+    """
+
     urls = get_floorplan_urls(id)
     if urls:
         url = urls[0]

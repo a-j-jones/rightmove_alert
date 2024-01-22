@@ -4,11 +4,11 @@ import logging
 from app import count_new_properties
 from config.logging import logging_setup
 from email_data.send_email import prepare_email_html, send_email
+from rightmove.database import mark_properties_reviewed
 from rightmove.floorplan import update_floorplans
 from rightmove.geolocation import update_locations
 from rightmove.run import (
     download_property_data,
-    mark_properties_reviewed,
     download_properties,
 )
 
@@ -20,7 +20,7 @@ def main():
     # Download the latest properties and data:
     logger.info("Downloading properties and data...")
     asyncio.run(download_properties("BUY"))
-    asyncio.run(download_property_data(update=False))
+    asyncio.run(download_property_data(update=True))
 
     # Update geolocation data:
     logger.info("Updating geolocation data...")

@@ -1,6 +1,6 @@
 import asyncio
 import datetime as dt
-from typing import Optional
+from typing import Optional, List
 
 import numpy as np
 from tqdm.asyncio import tqdm
@@ -34,7 +34,7 @@ class RightmoveSearcher:
         sstc: Optional[bool] = False,
         exclude: Optional[list] = None,
         include: Optional[list] = None,
-    ) -> bool:
+    ) -> None:
         """
         Interacts with the rightmove.Rightmove API wrapper to perform a grid search of an entire area, finding
         every possible property on the website within given coordinates and region search term.
@@ -151,7 +151,7 @@ class RightmoveSearcher:
     @staticmethod
     def get_new_viewports(
         lat1: float, lat2: float, lon1: float, lon2: float
-    ) -> list[dict, dict]:
+    ) -> List[dict]:
         """
         Takes a viewport and divides it into two equal viewports which can then be used to narrow the search
         for properties.

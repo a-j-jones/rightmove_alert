@@ -1,12 +1,11 @@
 import asyncio
 
-from config import DATABASE_URI
 from rightmove.api_wrapper import Rightmove
 from rightmove.database import RightmoveDatabase
 
 
 async def test_get_region():
-    database = RightmoveDatabase(DATABASE_URI)
+    database = RightmoveDatabase()
     async with Rightmove(database) as rightmove:
         region = rightmove.get_region("LONDON")
         assert region == "REGION^87490"
@@ -14,9 +13,9 @@ async def test_get_region():
 
 
 async def test_get_properties():
-    database = RightmoveDatabase(DATABASE_URI)
+    database = RightmoveDatabase()
     async with Rightmove(database) as rightmove:
-        properties = await rightmove.get_properties(
+        properties = await rightmove.database.get_properties(
             region_search="LONDON",
             load_sql=False,
             lat1=51.313447,
@@ -30,7 +29,7 @@ async def test_get_properties():
 
 
 async def test_get_property_data():
-    database = RightmoveDatabase(DATABASE_URI)
+    database = RightmoveDatabase()
     async with Rightmove(database) as rightmove:
         property_data = await rightmove.get_property_data("BUY", [143206301])
         assert len(property_data) == 1
@@ -38,14 +37,14 @@ async def test_get_property_data():
 
 
 def test_database():
-    database = RightmoveDatabase(DATABASE_URI)
+    database = RightmoveDatabase()
 
     data = {
         "properties": [
             {"id": 00000000, "location": {"latitude": 51.0000, "longitude": 0.0000}}
         ]
     }
-    database.load_map_properties(data=data, channel="BUY")
+    database.load_map_properties(properties=data, channel="BUY")
 
 
 # asyncio.run(test_get_region())
