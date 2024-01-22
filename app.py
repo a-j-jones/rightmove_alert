@@ -2,8 +2,6 @@ import asyncio
 import logging
 import os
 
-import pandas as pd
-import psycopg2
 import waitress
 from flask import (
     Flask,
@@ -14,10 +12,16 @@ from flask import (
     url_for,
 )
 
-from config import IS_WINDOWS, DATABASE_URI
+from config import IS_WINDOWS
 from config.logging import logging_setup
 from email_data.send_email import prepare_email_html, send_email
-from rightmove.database import get_email_addresses, set_email_addresses
+from rightmove.database import (
+    get_email_addresses,
+    set_email_addresses,
+    get_property_reviews,
+    delete_property_review,
+    get_new_property_count,
+)
 from rightmove.floorplan import update_floorplans
 from rightmove.geolocation import update_locations
 from rightmove.models import EmailAddress
@@ -49,14 +53,11 @@ def favicon():
 
 @app.route("/")
 def index():
-    # Get review dates:
-    sql = "select distinct email_id, str_date from review_dates order by email_id desc"
-    items = pd.read_sql(sql, DATABASE_URI).to_records()
-
+    reviews = get_property_reviews()
     new_properties = count_new_properties()
 
     return render_template(
-        "index.html", title="Home", items=items, new_properties=new_properties
+        "index.html", title="Home", items=reviews, new_properties=new_properties
     )
 
 
@@ -116,18 +117,7 @@ def send():
 def delete_review():
     data = request.args.to_dict()
     review_id = data.get("id")
-
-    conn = psycopg2.connect(DATABASE_URI)
-    cursor = conn.cursor()
-
-    cursor.execute(f"select reviewed_date from review_dates where email_id={review_id}")
-    date = cursor.fetchone()[0]
-
-    cursor.execute(f"delete from review_dates where email_id={review_id}")
-    cursor.execute(f"delete from reviewed_properties where reviewed_date='{date}'")
-
-    conn.commit()
-
+    delete_property_review(review_id)
     return redirect(url_for("index"))
 
 
@@ -149,16 +139,8 @@ def update_settings():
 
 
 def count_new_properties() -> str:
-    # Get count of new properties:
-    sql = (
-        "select count(*) from alert_properties where travel_time < 45 and review_id is"
-        " null"
-    )
-    count_props = pd.read_sql(sql, DATABASE_URI).values[0][0]
-
-    new_properties = ""
-    if count_props > 0:
-        new_properties = f" - {count_props} new"
+    count_props = get_new_property_count()
+    new_properties = f" - {count_props} new" if count_props > 0 else ""
 
     return new_properties
 

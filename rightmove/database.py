@@ -30,6 +30,42 @@ def set_email_addresses(email_addresses: List[EmailAddress]) -> None:
             model_executemany(cursor, "email_details", email_addresses)
 
 
+def get_property_reviews() -> List[dict]:
+    # Get review dates:
+    sql = "select distinct email_id, str_date from review_dates order by email_id desc"
+    with get_database_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(sql)
+            return [
+                {"email_id": row[0], "str_date": row[1]} for row in cursor.fetchall()
+            ]
+
+
+def delete_property_review(review_id: str) -> None:
+    with get_database_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                f"select reviewed_date from review_dates where email_id={review_id}"
+            )
+            date = cursor.fetchone()[0]
+
+            cursor.execute(f"delete from review_dates where email_id={review_id}")
+            cursor.execute(
+                f"delete from reviewed_properties where reviewed_date='{date}'"
+            )
+
+            conn.commit()
+
+
+def get_new_property_count() -> int:
+    with get_database_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "SELECT COUNT(*) FROM alert_properties WHERE review_id IS NULL"
+            )
+            return cursor.fetchone()[0]
+
+
 def get_floorplan_properties() -> List[int]:
     """
     Get a list of property IDs which require enhanced data by going to
