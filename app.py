@@ -72,7 +72,7 @@ def email_template():
 
     new_properties = count_new_properties()
     properties = get_properties(review_filter)
-    graph = create_mapbox(properties)
+    graph = create_mapbox(properties) if properties else None
 
     return render_template(
         "template.html",
