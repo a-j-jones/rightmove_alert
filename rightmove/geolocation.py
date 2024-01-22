@@ -16,14 +16,23 @@ from rightmove.database import (
 )
 from rightmove.models import PropertyLocationExcluded, TravelTimePrecise
 
+# Setting up logger
 logger = logging.getLogger(__name__)
 logger = logging_setup(logger)
 
 
 @njit()
-def point_in_polygon(x, y, polygon):
+def point_in_polygon(x: float | np.ndarray, y: float | np.ndarray, polygon: np.ndarray):
     """
-    Checks if a point is inside a polygon
+    Check if a given point is inside a polygon
+
+    Args:
+        x (float): x-coordinate of the point
+        y (float): y-coordinate of the point
+        polygon (list): list of tuples representing the vertices of the polygon
+
+    Returns:
+        bool: True if the point is inside the polygon, False otherwise
     """
     n = len(polygon)
     inside = False
@@ -46,9 +55,16 @@ def point_in_polygon(x, y, polygon):
 
 
 @njit(parallel=True)
-def points_in_polygon_parallel(points, polygon):
+def points_in_polygon_parallel(points: np.ndarray, polygon: np.ndarray):
     """
-    Executes the point_in_polygon
+    Check an array of points and return an array representing whether each point is inside the given polygon.
+
+    Args:
+        points (numpy.ndarray): array of points where each point is represented as a tuple of x and y coordinates
+        polygon (list): list of tuples representing the vertices of the polygon
+
+    Returns:
+        numpy.ndarray: array of booleans representing whether each point is inside the polygon
     """
     D = np.empty(len(points), dtype=numba.boolean)
     for i in numba.prange(0, len(D)):
@@ -57,11 +73,31 @@ def points_in_polygon_parallel(points, polygon):
     return D
 
 
-def get_shape(filepath):
+def get_shape(filepath: Path):
     """
-    Reads a geojson file and returns the coordinates of the polygon
-    """
+    Function to read a geojson file and return the coordinates of the polygon
 
+    {
+        "search_id": "Search 0",
+        "shapes": [
+            {
+                "shell": [
+                    {
+                        "lat": 51.502888,
+                        "lng": -0.025201356
+                    }
+                    ...
+                ]
+            }
+        ]
+    }
+
+    Args:
+        filepath (str): path to the geojson file
+
+    Returns:
+        list: list of dictionaries representing the shapes in the geojson file
+    """
     with open(filepath) as f:
         data = json.load(f)
 
@@ -70,7 +106,7 @@ def get_shape(filepath):
 
 def update_locations():
     """
-    Updates the locations with the travel time data
+    Add time travel data for properties which have not been updated yet.
     """
     df = get_location_dataframe()
 

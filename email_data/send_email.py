@@ -16,20 +16,35 @@ from config import BASE_DIR, BOOTSTRAP_UTIL, DATA, TEMPLATES
 from config.logging import logging_setup
 from rightmove.database import get_email_addresses, get_properties
 
+# Setting up logger
 logger = logging.getLogger(__name__)
 logger = logging_setup(logger)
 
+# Defining paths for bootstrap and jinja templates
 BOOTSTRAP_TEMPLATE = Path(BASE_DIR, "email_data", "bootstrap.html")
 JINJA_TEMPLATE = Path(BASE_DIR, "email_data", "jinja.html")
 
 
 def cleanup_files():
+    """
+    Clean up temporary files created for the email.
+    """
     logger.info("Cleaning up temporary files")
     os.remove(BOOTSTRAP_TEMPLATE)
     os.remove(JINJA_TEMPLATE)
 
 
 def create_email(from_email: str, recipients: List[str]) -> MIMEMultipart:
+    """
+    Creates email message using MIME.
+
+    Args:
+        from_email (str): Sender's email address
+        recipients (List[str]): List of recipient email addresses
+
+    Returns:
+        MIMEMultipart: Email message
+    """
     logger.info("Creating email")
 
     msg = MIMEMultipart("alternative")
@@ -48,6 +63,15 @@ def create_email(from_email: str, recipients: List[str]) -> MIMEMultipart:
 
 
 def prepare_email_html(review_id) -> bool:
+    """
+    Prepare HTML file to be sent in an email using jinja2 templating and bootstrap.
+
+    Args:
+        review_id (int): Review ID to filter properties
+
+    Returns:
+        bool: True if successful, False otherwise
+    """
     review_filter = f"review_id = {review_id}"
     properties = get_properties(review_filter)
 
@@ -75,6 +99,9 @@ def prepare_email_html(review_id) -> bool:
 
 
 def send_email():
+    """
+    Sends email to the recipients in the database, from the email in secrets JSON.
+    """
     with open(os.path.join(DATA, "secrets.json"), "r") as f:
         secrets = json.load(f)
         email = secrets["email"]
