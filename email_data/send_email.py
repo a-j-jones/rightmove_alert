@@ -82,12 +82,12 @@ def prepare_email_html(review_id) -> bool:
     bootstrap_email_path = shutil.which(BOOTSTRAP_UTIL)
 
     template = env.get_template("send_email_template.html")
-    with open(BOOTSTRAP_TEMPLATE, "w", encoding="utf-8") as f:
+    with open(JINJA_TEMPLATE, "w", encoding="utf-8") as f:
         f.write(template.render(properties=properties))
 
     if bootstrap_email_path:
-        logger.info(f"Creating output file: {JINJA_TEMPLATE}")
-        cmd = rf'"{bootstrap_email_path}" "{BOOTSTRAP_TEMPLATE}" > "{JINJA_TEMPLATE}"'
+        logger.info(f"Creating output file: {BOOTSTRAP_TEMPLATE}")
+        cmd = rf'"{bootstrap_email_path}" "{JINJA_TEMPLATE}" > "{BOOTSTRAP_TEMPLATE}"'
         subprocess.run(cmd, text=True, shell=True)
     else:
         logger.error(f"'{BOOTSTRAP_UTIL}' was not found in path:")
