@@ -1,3 +1,7 @@
+"""
+Converts the output from geojson.io to the format used in get_shapes.py
+"""
+
 import json
 
 
