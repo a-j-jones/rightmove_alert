@@ -142,7 +142,7 @@ def insert_floorplans(floorplans: List[PropertyFloorplan]) -> None:
             model_executemany(cursor, "property_floorplan", floorplans)
 
 
-def get_location_dataframe() -> pd.DataFrame:
+def get_location_dataframe(ids: List[int] = None) -> pd.DataFrame:
     """
     Function to get the details of properties which require a travel time calculation.
 
@@ -150,7 +150,18 @@ def get_location_dataframe() -> pd.DataFrame:
         pd.DataFrame: A DataFrame containing the details of properties which require a travel time calculation.
     """
 
-    sql = "SELECT * FROM alert_properties where travel_reviewed = 0"
+    if ids is None:
+        sql = (
+            "SELECT property_id, longitude, latitude FROM alert_properties where"
+            " travel_reviewed = 0"
+        )
+
+    else:
+        sql = (
+            "SELECT property_id, longitude, latitude FROM alert_properties where"
+            f" property_id in ({','.join([str(id) for id in ids])})"
+        )
+
     df = pd.read_sql(sql, DATABASE_URI)
 
     return df

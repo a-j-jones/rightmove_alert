@@ -104,20 +104,10 @@ def get_shape(filepath: Path):
     return data["shapes"]
 
 
-def update_locations():
-    """
-    Add time travel data for properties which have not been updated yet.
-    """
-    df = get_location_dataframe()
+def check_points(df: pd.DataFrame) -> pd.DataFrame:
 
-    if len(df) == 0:
-        logger.info("No new properties found.")
-        return
-
-    logger.info(f"Updating {len(df)} properties...")
-
+    df = df.sort_values("property_id")
     points = df[["latitude", "longitude"]].values
-
     keep_cols = []
     parent_dir = Path(path.dirname(path.dirname(__file__)))
 
@@ -139,7 +129,6 @@ def update_locations():
         df[col] = result
         df[int(file.stem.replace("sub_", "").replace("m", ""))] = result
 
-    # Loop through any excluded polygons and set the travel time to 999 if the property is in the polygon:
     files = sorted(list(parent_dir.glob("shapes/exclude_*.json")))
     exclude_location = np.zeros(len(points), dtype=bool)
     for file in files:
@@ -147,6 +136,8 @@ def update_locations():
             polygon = pd.DataFrame(polygon_data["shell"]).values
             result = points_in_polygon_parallel(points, polygon)
             exclude_location = np.logical_or(exclude_location, result)
+
+    df["exclude_location"] = exclude_location
 
     df = df.melt(
         id_vars=["property_id"],
@@ -158,6 +149,23 @@ def update_locations():
     df = df.groupby("property_id").agg({"travel_time": "min"}).reset_index()
     df = df.sort_values("property_id")
     df["excluded"] = exclude_location
+
+    return df
+
+
+def update_locations():
+    """
+    Add time travel data for properties which have not been updated yet.
+    """
+    df = get_location_dataframe()
+
+    if len(df) == 0:
+        logger.info("No new properties found.")
+        return
+
+    logger.info(f"Updating {len(df)} properties...")
+
+    df = check_points(df)
 
     travel_time_values = []
     excluded_values = []
