@@ -1,3 +1,4 @@
+import logging
 import random
 import re
 
@@ -6,7 +7,11 @@ import pytesseract
 import requests
 from imageio.v2 import imread
 
-from rightmove.enhancements import USER_AGENTS, logger
+from config.logging import logging_setup
+from rightmove.utils import USER_AGENTS
+
+logger = logging.getLogger(__name__)
+logger = logging_setup(logger)
 
 
 def download_img(url: str) -> np.ndarray:
