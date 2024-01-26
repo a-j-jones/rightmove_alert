@@ -1,7 +1,15 @@
+import json
+import os
 from typing import List
 
 import pandas as pd
 import plotly.graph_objects as go
+
+from config import DATA
+
+with open(os.path.join(DATA, "secrets.json"), "r") as f:
+    secrets = json.load(f)
+    MAPBOX_TOKEN = secrets.get("mapbox")["access_token"]
 
 
 def create_mapbox(properties: List[dict]) -> str:
@@ -40,7 +48,7 @@ def create_mapbox(properties: List[dict]) -> str:
 
     fig.update_layout(
         mapbox={
-            "accesstoken": "pk.eyJ1IjoiYWRhbWpvbmVzIiwiYSI6ImNrb3c0M3V6MDAya2QydnJ3cWtwN3VsZWQifQ.JBoPpcnRJE7AX_dq0YAOyA",
+            "accesstoken": MAPBOX_TOKEN,
             "style": "streets",
             "center": {"lon": -0.1, "lat": 51.5},
             "zoom": 10,
