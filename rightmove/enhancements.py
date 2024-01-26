@@ -2,10 +2,11 @@ import logging
 import random
 import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import List, Dict
+from typing import List, Dict, Tuple
 
 import requests
 from bs4 import BeautifulSoup
+from pydantic import BaseModel
 from tqdm import tqdm
 
 from config.logging import logging_setup
@@ -64,7 +65,7 @@ def get_data(property_id: int) -> Dict:
     return {"floorplans": floorplans, "summary": summary}
 
 
-def get_additional_data(id: int):
+def get_additional_data(id: int) -> Tuple[BaseModel, BaseModel]:
     """
     Get the floorplan data of a given property ID.
 
