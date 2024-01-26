@@ -1,18 +1,21 @@
 import asyncio
 import datetime as dt
 import json
+import os
 from typing import Tuple
 
 from traveltimepy import Coordinates, PublicTransport, TravelTimeSdk
 from traveltimepy.dto.responses.time_map import TimeMapResult
 
+from config import DATA
+
 LAT = 51.5038879
 LON = -0.0182073
 ARRIVAL_TIME = dt.datetime(2023, 9, 25, 7, 30, 0)
 
-with open("secrets.json", "r") as f:
+with open(os.path.join(DATA, "secrets.json"), "r") as f:
     secrets = json.load(f)
-    sdk = TravelTimeSdk(**secrets)
+    sdk = TravelTimeSdk(**secrets.get("traveltimepy"))
 
 
 async def get_results(minutes: int) -> Tuple[int, TimeMapResult]:

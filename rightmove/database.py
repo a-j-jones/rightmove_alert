@@ -11,7 +11,6 @@ from config import DATABASE_URI
 from rightmove.models import (
     PropertyData,
     EmailAddress,
-    PropertyFloorplan,
     ReviewDates,
     ReviewedProperties,
 )
@@ -112,7 +111,7 @@ def get_new_property_count() -> int:
             return cursor.fetchone()[0]
 
 
-def get_floorplan_properties() -> List[int]:
+def get_enhancement_properties() -> List[int]:
     """
     Function to get a list of property IDs which require enhanced data from the Rightmove property page.
 
@@ -124,22 +123,23 @@ def get_floorplan_properties() -> List[int]:
             cursor.execute("""
                 SELECT DISTINCT ap.property_id
                 FROM alert_properties ap
-                LEFT JOIN property_floorplan pf ON ap.property_id = pf.property_id
+                LEFT JOIN property_floorplan pf using (property_id)
                 WHERE pf.property_id IS NULL and ap.area is null
                 """)
             return [row[0] for row in cursor.fetchall()]
 
 
-def insert_floorplans(floorplans: List[PropertyFloorplan]) -> None:
+def insert_models(models: List[BaseModel], table: str) -> None:
     """
     Function to insert a list of floorplans into the database.
 
     Args:
-        floorplans (List[PropertyFloorplan]): A list of PropertyFloorplan objects to be inserted into the database.
+        models (List[BaseModel]): A list of BaseModel objects to be inserted into the database.
+        table (str): The name of the table in the database.
     """
     with get_database_connection() as conn:
         with conn.cursor() as cursor:
-            model_executemany(cursor, "property_floorplan", floorplans)
+            model_executemany(cursor, table, models)
 
 
 def get_location_dataframe(ids: List[int] = None) -> pd.DataFrame:

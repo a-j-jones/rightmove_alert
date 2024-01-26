@@ -24,7 +24,7 @@ from rightmove.database import (
     mark_properties_reviewed,
     get_properties,
 )
-from rightmove.floorplan import update_floorplans
+from rightmove.enhancements import update_enhanced_data
 from rightmove.geolocation import update_locations
 from rightmove.models import EmailAddress
 from rightmove.plotting import create_mapbox
@@ -97,7 +97,7 @@ def download():
     asyncio.run(download_properties("BUY"))
     asyncio.run(download_property_data(update=False))
     update_locations()
-    update_floorplans()
+    update_enhanced_data()
     logger.info("Download complete")
 
     return redirect(url_for("index"))

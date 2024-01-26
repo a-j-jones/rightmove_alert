@@ -5,7 +5,7 @@ from app import count_new_properties
 from config.logging import logging_setup
 from email_data.send_email import prepare_email_html, send_email
 from rightmove.database import mark_properties_reviewed
-from rightmove.floorplan import update_floorplans
+from rightmove.enhancements import update_enhanced_data
 from rightmove.geolocation import update_locations
 from rightmove.run import (
     download_property_data,
@@ -28,7 +28,7 @@ def main():
 
     # Getting Floorplan data:
     logger.info("Getting Floorplan data...")
-    update_floorplans()
+    update_enhanced_data()
 
     logger.info("Getting number of new properties...")
     count = count_new_properties()
