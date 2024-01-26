@@ -1,41 +1,59 @@
 # Rightmove Alerts
 
+![Interface Screenshot](interface_screenshot.png)
+
 ## Description
 
-This project wraps the Rightmove API, implemented in their website to populate their map search page, as well as the
-data displayed to the user on the website.
-This tool is built to obtain results from the API and build an automated email system to send desired properties to
-their email when it meets their requirements.
+This project wraps the hidden Rightmove API, implemented in their website to populate their map search page, as well as
+the data displayed to the user on the website.
+Fundamentally the tool is built to obtain results from the API, and automatically email the user with properties
+that meet their requirements.
 
-## Features
+## Property data
 
-- Obtain all properties from the Rightmove API within a given search area, in both Rent and Buy channels as required.
-- Compare the location of the properties to travel time shape files, to determine whether the property is within the
+- **Core data:** Obtain all properties from the Rightmove API within a given search area, in both Rent and Buy channels
+  as required
+- **Travel Time:** Compare the location to travel time JSON files, to determine whether the property is within the
   requirements
-- Interact with the properties which were added/reviewed on specific days using a web interface.
-- Send an email to the user with the new properties, ad hoc or on a schedule using docker cron jobs.
+- **Excluded area:** Compare the location to an 'excluded area' JSON file, to remove properties that are not in a
+  desired location
+- **Floorplan:** Downloads the floorplan from the Rightmove page and extracts the sqft area where it is missing from the
+  data
+- **OpenAI:** Reviews the summary/description from the Rightmove page and detirmines whether the property has a private
+  garden
+
+## Interface
+
+- Flask web interface allows the user to go through the daily "reviews" of new properties, and see the properties on a
+  map.
+- From the review page, you can manually send an email.
+- Force a refresh and download new properties/data.
 
 ## Installation
+
+Project currently relies on a locally hosted PostGreSQL database, this URI is held in the `DATABASE_URI` variable
+in the config, so you can create a new database, update the URI to point to it, and run the views.sql file to create the
+schema.
 
 ### Windows
 
 ```cmd
-git clone https://github.com/a-j-jones/rightmove_api_v2.git
-cd rightmove_api_v2
+git clone https://github.com/a-j-jones/rightmove_api_wrapper.git
+cd rightmove_api_wrapper
 pip install -r requirements.txt
 ```
 
 ### Docker
 
 ```cmd
-git clone https://github.com/a-j-jones/rightmove_api_v2.git
-cd rightmove_api_v2
+git clone https://github.com/a-j-jones/rightmove_api_wrapper.git
+cd rightmove_api_wrapper
 docker-compose up --build
 ```
 
 ## Usage
 
-Navigate to the locally hosted webpage, by default this is http://localhost:5001
+Navigate to the locally hosted webpage, by default this is http://localhost:5009
 
 - Download new properties with "Download properties"
 - View latest, non-reviewed properties with "Review properties"
