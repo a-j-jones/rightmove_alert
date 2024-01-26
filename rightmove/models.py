@@ -120,3 +120,9 @@ class PropertyFloorplan(BaseModel):
     floorplan_url: Optional[str] = Field(default=None)
     area_sqft: Optional[float] = Field(default=None)
     area_sqm: Optional[float] = Field(default=None)
+
+
+class PropertyDescription(BaseModel):
+    property_id: int
+    summary: Optional[str] = Field(default=None)
+    garden: Optional[str] = Field(default=None)

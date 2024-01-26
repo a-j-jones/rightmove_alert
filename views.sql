@@ -11,6 +11,13 @@ create table if not exists property_floorplan
     area_sqm      double precision
 );
 
+create table if not exists property_summary
+(
+    property_id integer not null primary key,
+    summary     varchar(10000),
+    garden      varchar(50)
+);
+
 create table if not exists property_location_excluded
 (
     property_id integer not null primary key,
@@ -113,19 +120,20 @@ WHERE CURRENT_TIMESTAMP BETWEEN pd.property_validfrom AND pd.property_validto;
 
 CREATE VIEW alert_properties AS
 SELECT ap.property_id,
-       bedrooms,
-       bathrooms,
+       ap.bedrooms,
+       ap.bathrooms,
        coalesce(ap.area, pf.area_sqft)                             as area,
-       summary,
-       address,
-       property_subtype,
-       property_description,
-       price_amount,
-       lettings_agent,
-       lettings_agent_branch,
-       last_rightmove_update                                       AS last_update,
-       longitude,
-       latitude,
+       ps.garden,
+       ap.summary,
+       ap.address,
+       ap.property_subtype,
+       ap.property_description,
+       ap.price_amount,
+       ap.lettings_agent,
+       ap.lettings_agent_branch,
+       ap.last_rightmove_update                                    AS last_update,
+       ap.longitude,
+       ap.latitude,
        r.emailed,
        r.reviewed_date,
        CASE
@@ -133,7 +141,7 @@ SELECT ap.property_id,
            ELSE 0 END                                              AS latest_reviewed,
        CASE WHEN ap.property_id = r.property_id THEN 1 ELSE 0 END  AS property_reviewed,
        CASE WHEN ap.property_id = tp.property_id THEN 1 ELSE 0 END AS travel_reviewed,
-       travel_time,
+       tp.travel_time,
        rp.email_id                                                 AS review_id,
        (SELECT STRING_AGG(DISTINCT image_url, ',')
         FROM property_images pi
@@ -144,16 +152,18 @@ FROM properties_current ap
          LEFT JOIN reviewed_properties r using (property_id)
          LEFT JOIN review_dates rp using (reviewed_date)
          LEFT JOIN property_floorplan pf using (property_id)
-WHERE price_amount BETWEEN 550000 AND 850000
-  AND bedrooms >= 2
+         LEFT JOIN property_summary ps using (property_id)
+WHERE ap.price_amount BETWEEN 550000 AND 850000
+  AND ap.bedrooms >= 2
   AND (coalesce(ap.area, pf.area_sqft) > 700 or coalesce(ap.area, pf.area_sqft) is null)
-  AND NOT development
-  AND NOT commercial
-  AND NOT auction
-  AND LOWER(summary) LIKE '%garden%'
-  AND last_rightmove_update > TO_CHAR(CURRENT_DATE - INTERVAL '30 days', 'YYYY-MM-DD')
+  AND NOT ap.development
+  AND NOT ap.commercial
+  AND NOT ap.auction
+  AND LOWER(ap.summary) LIKE '%garden%'
+  AND ap.last_rightmove_update > TO_CHAR(CURRENT_DATE - INTERVAL '30 days', 'YYYY-MM-DD')
   AND (not ple.excluded or ple.excluded is null)
-  AND (travel_time <= 40 or tp.property_id is null)
+  AND (tp.travel_time <= 40 or tp.property_id is null)
+  AND (ps.garden in ('private', 'unknown') or ps.garden is null)
 ;
 
 CREATE VIEW properties_review AS

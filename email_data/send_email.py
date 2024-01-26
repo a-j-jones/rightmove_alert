@@ -104,8 +104,8 @@ def send_email():
     """
     with open(os.path.join(DATA, "secrets.json"), "r") as f:
         secrets = json.load(f)
-        email = secrets["email"]
-        password = secrets["password"]
+        email = secrets.get("email_creds")["email"]
+        password = secrets.get("email_creds")["password"]
 
     recipients = get_email_addresses()
 
