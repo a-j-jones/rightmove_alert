@@ -46,15 +46,17 @@ def get_data(property_id: int) -> Dict:
         img = re.sub(r"(_\d{2}_\d{4})(.+)(.gif|.jpeg|.png)", r"\1\3", img["src"])
         floorplans.append(img)
 
-    key_features = "\n".join(
-        soup.find("ul", class_="_1uI3IvdF5sIuBtRIvKrreQ").stripped_strings
-    )
+    key_features_element = soup.find("ul", class_="_1uI3IvdF5sIuBtRIvKrreQ")
+    if key_features_element:
+        key_features = "\n".join(key_features_element.stripped_strings)
+    else:
+        key_features = ""
 
-    description = "\n".join(
-        soup.find(
-            "div", class_=["STw8udCxUaBUMfOOZu0iL", "kJR0bMoi8VLouNkBRKGww"]
-        ).div.stripped_strings
-    )
+    description_element = soup.find("div", class_="_1a8kqJPMw6HOD9SDZq61E8")
+    if description_element:
+        description = "\n".join(description_element.stripped_strings)
+    else:
+        description = ""
 
     summary = f"""## KEY FEATURES
     {key_features}
