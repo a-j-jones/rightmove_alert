@@ -176,7 +176,6 @@ FROM
     properties_enhanced
 WHERE
       price_amount BETWEEN 550000 AND 850000
-  AND LOWER(summary) LIKE '%garden%'
   AND bedrooms >= 2
   AND (area > 700 OR area IS NULL)
   AND (NOT location_excluded OR location_excluded IS NULL)
