@@ -38,16 +38,16 @@ schema.
 ### Windows
 
 ```cmd
-git clone https://github.com/a-j-jones/rightmove_api_wrapper.git
-cd rightmove_api_wrapper
+git clone https://github.com/a-j-jones/rightmove_alert.git
+cd rightmove_alert
 pip install -r requirements.txt
 ```
 
 ### Docker
 
 ```cmd
-git clone https://github.com/a-j-jones/rightmove_api_wrapper.git
-cd rightmove_api_wrapper
+git clone https://github.com/a-j-jones/rightmove_alert.git
+cd rightmove_alert
 docker-compose up --build
 ```
 
