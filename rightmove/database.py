@@ -66,9 +66,7 @@ def get_property_reviews() -> List[dict]:
     with get_database_connection() as conn:
         with conn.cursor() as cursor:
             cursor.execute(sql)
-            return [
-                {"email_id": row[0], "str_date": row[1]} for row in cursor.fetchall()
-            ]
+            return [{"email_id": row[0], "str_date": row[1]} for row in cursor.fetchall()]
 
 
 def delete_property_review(review_id: str) -> None:
@@ -80,15 +78,11 @@ def delete_property_review(review_id: str) -> None:
     """
     with get_database_connection() as conn:
         with conn.cursor() as cursor:
-            cursor.execute(
-                f"select reviewed_date from review_dates where email_id={review_id}"
-            )
+            cursor.execute(f"select reviewed_date from review_dates where email_id={review_id}")
             date = cursor.fetchone()[0]
 
             cursor.execute(f"delete from review_dates where email_id={review_id}")
-            cursor.execute(
-                f"delete from reviewed_properties where reviewed_date='{date}'"
-            )
+            cursor.execute(f"delete from reviewed_properties where reviewed_date='{date}'")
 
             conn.commit()
 
@@ -105,9 +99,7 @@ def get_new_property_count() -> int:
     """
     with get_database_connection() as conn:
         with conn.cursor() as cursor:
-            cursor.execute(
-                "SELECT COUNT(*) FROM alert_properties WHERE review_id IS NULL"
-            )
+            cursor.execute("SELECT COUNT(*) FROM alert_properties WHERE review_id IS NULL")
             return cursor.fetchone()[0]
 
 
@@ -151,10 +143,7 @@ def get_location_dataframe(ids: List[int] = None) -> pd.DataFrame:
     """
 
     if ids is None:
-        sql = (
-            "SELECT property_id, longitude, latitude FROM alert_properties where"
-            " travel_reviewed = 0"
-        )
+        sql = "SELECT property_id, longitude, latitude FROM alert_properties where travel_reviewed = 0"
 
     else:
         sql = (
@@ -211,9 +200,7 @@ def model_executemany(cursor, table_name: str, values: List[BaseModel]):
     """
 
     # Insert the values using executemany
-    cursor.executemany(
-        insert_query, [tuple(model.model_dump().values()) for model in values]
-    )
+    cursor.executemany(insert_query, [tuple(model.model_dump().values()) for model in values])
 
 
 def parse_area(area_str):
@@ -228,9 +215,7 @@ def parse_area(area_str):
     """
 
     if "sq" in area_str:
-        return float(
-            re.match(r"\d{1,3}(,\d{3})*(\.\d+)?", area_str).group(0).replace(",", "")
-        )
+        return float(re.match(r"\d{1,3}(,\d{3})*(\.\d+)?", area_str).group(0).replace(",", ""))
     else:
         return None
 
@@ -246,9 +231,7 @@ def parse_added_or_reduced(added_or_reduced_str):
         dt.datetime: The parsed date as a datetime object, or None if the date could not be parsed.
     """
     try:
-        added_or_reduced = pd.to_datetime(
-            added_or_reduced_str.split(" ")[-1], dayfirst=True
-        )
+        added_or_reduced = pd.to_datetime(added_or_reduced_str.split(" ")[-1], dayfirst=True)
         if str(added_or_reduced) == "NaT":
             added_or_reduced = None
 
@@ -336,9 +319,7 @@ class RightmoveDatabase:
 
                 return result
 
-    def get_id_list(
-        self, update: bool, channel: str, update_cutoff=None
-    ) -> List[List[int]]:
+    def get_id_list(self, update: bool, channel: str, update_cutoff=None) -> List[List[int]]:
         """
         Generator for a list of IDs which can be used to search the Rightmove API, this list will be a
         maximum size of 25, and the generator will stop once all IDs have been yielded.
@@ -405,12 +386,10 @@ class RightmoveDatabase:
                     cursor.close()
                     return
 
-                cursor.execute(
-                    f"""
+                cursor.execute(f"""
                     SELECT property_id 
                     FROM property_location 
-                    WHERE property_id IN ({','.join([str(p) for p in properties.keys()])})"""
-                )
+                    WHERE property_id IN ({','.join([str(p) for p in properties.keys()])})""")
                 existing_ids: set = {r[0] for r in cursor.fetchall()}
 
                 insert_values = []
@@ -486,9 +465,7 @@ class RightmoveDatabase:
                     premium_listing=prop["premiumListing"],
                     price_amount=prop["price"]["amount"],
                     price_frequency=prop["price"]["frequency"],
-                    price_qualifier=prop["price"]["displayPrices"][0].get(
-                        "displayPriceQualifier"
-                    ),
+                    price_qualifier=prop["price"]["displayPrices"][0].get("displayPriceQualifier"),
                     lettings_agent=prop["customer"]["brandTradingName"],
                     lettings_agent_branch=prop["customer"]["branchName"],
                     development=prop["development"],
@@ -575,15 +552,10 @@ def mark_properties_reviewed() -> int | None:
     """
     with get_database_connection() as conn:
         with conn.cursor() as cursor:
-            cursor.execute(
-                "select distinct property_id from alert_properties where"
-                " property_reviewed = 0"
-            )
+            cursor.execute("select distinct property_id from alert_properties where property_reviewed = 0")
             property_ids = cursor.fetchall()
 
-            cursor.execute(
-                "select coalesce(max(email_id), 0) as last_id from review_dates"
-            )
+            cursor.execute("select coalesce(max(email_id), 0) as last_id from review_dates")
             review_id = cursor.fetchone()[0] + 1
 
             if len(property_ids) == 0:
@@ -598,9 +570,7 @@ def mark_properties_reviewed() -> int | None:
             model_execute(cursor, table_name="review_dates", value=review)
 
             values = [
-                ReviewedProperties(
-                    property_id=property_id[0], reviewed_date=review_date, emailed=False
-                )
+                ReviewedProperties(property_id=property_id[0], reviewed_date=review_date, emailed=False)
                 for property_id in property_ids
             ]
             model_executemany(cursor, table_name="reviewed_properties", values=values)
@@ -626,6 +596,10 @@ def get_properties(sql_filter: str) -> List[dict]:
     # Reading data from CSV
     df = pd.read_sql(sql, DATABASE_URI)
 
+    # Formatting changes:
+    df["garden"] = df["garden"].apply(lambda x: "Private" if x == "private" else "Unknown")
+    df["area"] = df["area"].fillna(0).apply(lambda x: f"{x:,.0f} ft\u00b2" if x != 0 else "Unavailable")
+
     properties = []
     for index, property in df.iterrows():
         travel_time = f"About {property.travel_time} minutes"
@@ -636,6 +610,8 @@ def get_properties(sql_filter: str) -> List[dict]:
             "address": property.address,
             "status": f"Last update {property.last_update}",
             "description": property.summary,
+            "garden": property.garden,
+            "area": property.area,
             "price": f"£{property.price_amount:,.0f}",
             "travel_time": travel_time,
             "longitude": property.longitude,
