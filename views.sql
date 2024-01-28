@@ -1,173 +1,200 @@
-create table if not exists email_details
+CREATE TABLE IF NOT EXISTS email_details
 (
-    email_address varchar(100) not null primary key
+    email_address varchar(100) NOT NULL PRIMARY KEY
 );
 
-create table if not exists property_floorplan
+CREATE TABLE IF NOT EXISTS property_floorplan
 (
-    property_id   integer not null primary key,
+    property_id   integer NOT NULL PRIMARY KEY,
     floorplan_url varchar(1000),
     area_sqft     double precision,
     area_sqm      double precision
 );
 
-create table if not exists property_summary
+CREATE TABLE IF NOT EXISTS property_summary
 (
-    property_id integer not null primary key,
+    property_id integer NOT NULL PRIMARY KEY,
     summary     varchar(10000),
     garden      varchar(50)
 );
 
-create table if not exists property_location_excluded
+CREATE TABLE IF NOT EXISTS property_location_excluded
 (
-    property_id integer not null primary key,
+    property_id integer NOT NULL PRIMARY KEY,
     excluded    boolean
 );
 
-create table if not exists property_data
+CREATE TABLE IF NOT EXISTS property_data
 (
-    property_id           integer          not null,
-    property_validfrom    timestamp        not null,
-    property_validto      timestamp        not null,
+    property_id           integer          NOT NULL,
+    property_validfrom    timestamp        NOT NULL,
+    property_validto      timestamp        NOT NULL,
     bedrooms              integer,
     bathrooms             integer,
     area                  double precision,
-    summary               varchar          not null,
-    address               varchar          not null,
+    summary               varchar          NOT NULL,
+    address               varchar          NOT NULL,
     property_subtype      varchar,
-    property_description  varchar          not null,
-    premium_listing       boolean          not null,
-    price_amount          double precision not null,
-    price_frequency       varchar          not null,
+    property_description  varchar          NOT NULL,
+    premium_listing       boolean          NOT NULL,
+    price_amount          double precision NOT NULL,
+    price_frequency       varchar          NOT NULL,
     price_qualifier       varchar,
-    lettings_agent        varchar          not null,
-    lettings_agent_branch varchar          not null,
-    development           boolean          not null,
-    commercial            boolean          not null,
-    enhanced_listing      boolean          not null,
-    students              boolean          not null,
-    auction               boolean          not null,
+    lettings_agent        varchar          NOT NULL,
+    lettings_agent_branch varchar          NOT NULL,
+    development           boolean          NOT NULL,
+    commercial            boolean          NOT NULL,
+    enhanced_listing      boolean          NOT NULL,
+    students              boolean          NOT NULL,
+    auction               boolean          NOT NULL,
     first_visible         timestamp,
     last_update           timestamp,
     last_displayed_update timestamp,
-    primary key (property_id, property_validfrom)
+    PRIMARY KEY (property_id, property_validfrom)
 );
 
-create table if not exists property_images
+CREATE TABLE IF NOT EXISTS property_images
 (
-    property_id   integer not null,
-    image_url     varchar not null,
+    property_id   integer NOT NULL,
+    image_url     varchar NOT NULL,
     image_caption varchar,
-    primary key (property_id, image_url)
+    PRIMARY KEY (property_id, image_url)
 );
 
-create table if not exists property_location
+CREATE TABLE IF NOT EXISTS property_location
 (
     property_id        serial
-        primary key,
+        PRIMARY KEY,
     property_asatdt    timestamp,
-    property_channel   varchar          not null,
-    property_longitude double precision not null,
-    property_latitude  double precision not null
+    property_channel   varchar          NOT NULL,
+    property_longitude double precision NOT NULL,
+    property_latitude  double precision NOT NULL
 );
 
-create table if not exists review_dates
+CREATE TABLE IF NOT EXISTS review_dates
 (
-    reviewed_date timestamp not null
-        primary key,
+    reviewed_date timestamp NOT NULL
+        PRIMARY KEY,
     email_id      integer,
     str_date      varchar
 );
 
-create table if not exists reviewed_properties
+CREATE TABLE IF NOT EXISTS reviewed_properties
 (
     property_id   serial
-        primary key,
-    reviewed_date timestamp not null,
-    emailed       boolean   not null
+        PRIMARY KEY,
+    reviewed_date timestamp NOT NULL,
+    emailed       boolean   NOT NULL
 );
 
-create table if not exists travel_time_precise
+CREATE TABLE IF NOT EXISTS travel_time_precise
 (
     property_id serial
-        primary key,
+        PRIMARY KEY,
     travel_time integer
 );
 
-drop view if exists properties_review;
-drop view if exists alert_properties;
-drop view if exists properties_current;
-drop view if exists start_date;
+DROP VIEW IF EXISTS properties_review;
+DROP VIEW IF EXISTS alert_properties;
+DROP VIEW IF EXISTS properties_enhanced;
+DROP VIEW IF EXISTS properties_current;
+DROP VIEW IF EXISTS start_date;
 
-CREATE VIEW start_date as
-select max(property_validfrom) as model_date
-from property_data;
+CREATE VIEW start_date AS
+SELECT
+    MAX(property_validfrom) AS model_date
+FROM
+    property_data;
 
 CREATE VIEW properties_current AS
-SELECT CURRENT_TIMESTAMP                                                                       AS time,
-       pd.*,
-       pl.property_channel,
-       pl.property_longitude                                                                   AS longitude,
-       pl.property_latitude                                                                    AS latitude,
-       TO_CHAR(GREATEST(COALESCE(first_visible, '1970-01-01'::timestamp),
-                        COALESCE(last_displayed_update, '1970-01-01'::timestamp)),
-               'YYYY-MM-DD')                                                                   AS last_rightmove_update,
-       ROUND(EXTRACT(EPOCH FROM sd.model_date) - EXTRACT(EPOCH FROM pd.first_visible) / 86400) AS days_old
-FROM property_data AS pd
-         LEFT JOIN property_location AS pl using (property_id)
-         FULL JOIN start_date AS sd ON 1 = 1
-WHERE CURRENT_TIMESTAMP BETWEEN pd.property_validfrom AND pd.property_validto;
+SELECT
+    CURRENT_TIMESTAMP AS time,
+    pd.*,
+    pl.property_channel,
+    pl.property_longitude AS longitude,
+    pl.property_latitude AS latitude,
+    TO_CHAR(GREATEST(COALESCE(first_visible, '1970-01-01'::timestamp),
+                     COALESCE(last_displayed_update, '1970-01-01'::timestamp)),
+            'YYYY-MM-DD') AS last_rightmove_update,
+    ROUND(EXTRACT(EPOCH FROM sd.model_date) - EXTRACT(EPOCH FROM pd.first_visible) / 86400) AS days_old
+FROM
+    property_data AS pd
+        LEFT JOIN property_location AS pl USING (property_id)
+        FULL JOIN start_date AS sd ON 1 = 1
+WHERE
+    CURRENT_TIMESTAMP BETWEEN pd.property_validfrom AND pd.property_validto;
 
-CREATE VIEW alert_properties AS
-SELECT ap.property_id,
-       ap.bedrooms,
-       ap.bathrooms,
-       coalesce(ap.area, pf.area_sqft)                             as area,
-       ps.garden,
-       ap.summary,
-       ap.address,
-       ap.property_subtype,
-       ap.property_description,
-       ap.price_amount,
-       ap.lettings_agent,
-       ap.lettings_agent_branch,
-       ap.last_rightmove_update                                    AS last_update,
-       ap.longitude,
-       ap.latitude,
-       r.emailed,
-       r.reviewed_date,
-       CASE
-           WHEN r.reviewed_date = (SELECT MAX(reviewed_date) FROM reviewed_properties) THEN 1
-           ELSE 0 END                                              AS latest_reviewed,
-       CASE WHEN ap.property_id = r.property_id THEN 1 ELSE 0 END  AS property_reviewed,
-       CASE WHEN ap.property_id = tp.property_id THEN 1 ELSE 0 END AS travel_reviewed,
-       tp.travel_time,
-       rp.email_id                                                 AS review_id,
-       (SELECT STRING_AGG(DISTINCT image_url, ',')
-        FROM property_images pi
-        WHERE pi.property_id = ap.property_id)                     AS images
-FROM properties_current ap
-         LEFT JOIN travel_time_precise tp using (property_id)
-         LEFT JOIN property_location_excluded ple using (property_id)
-         LEFT JOIN reviewed_properties r using (property_id)
-         LEFT JOIN review_dates rp using (reviewed_date)
-         LEFT JOIN property_floorplan pf using (property_id)
-         LEFT JOIN property_summary ps using (property_id)
-WHERE ap.price_amount BETWEEN 550000 AND 850000
-  AND ap.bedrooms >= 2
-  AND (coalesce(ap.area, pf.area_sqft) > 700 or coalesce(ap.area, pf.area_sqft) is null)
-  AND NOT ap.development
+
+CREATE VIEW properties_enhanced AS
+SELECT
+    ap.property_id,
+    ap.bedrooms,
+    ap.bathrooms,
+    COALESCE(ap.area, pf.area_sqft) AS area,
+    ps.garden,
+    ap.summary,
+    ap.address,
+    ap.property_subtype,
+    ap.property_description,
+    ap.price_amount,
+    ap.lettings_agent,
+    ap.lettings_agent_branch,
+    ap.last_rightmove_update AS last_update,
+    ap.longitude,
+    ap.latitude,
+    r.emailed,
+    r.reviewed_date,
+    CASE
+        WHEN r.reviewed_date = (SELECT MAX(reviewed_date) FROM reviewed_properties) THEN 1
+        ELSE 0 END AS latest_reviewed,
+    CASE WHEN ap.property_id = r.property_id THEN 1 ELSE 0 END AS property_reviewed,
+    CASE WHEN ap.property_id = tp.property_id THEN 1 ELSE 0 END AS travel_reviewed,
+    ple.excluded AS location_excluded,
+    tp.travel_time,
+    rp.email_id AS review_id,
+    (SELECT STRING_AGG(DISTINCT image_url, ',') FROM property_images pi WHERE pi.property_id = ap.property_id) AS images
+FROM
+    properties_current ap
+        LEFT JOIN travel_time_precise tp USING (property_id)
+        LEFT JOIN property_location_excluded ple USING (property_id)
+        LEFT JOIN reviewed_properties r USING (property_id)
+        LEFT JOIN review_dates rp USING (reviewed_date)
+        LEFT JOIN property_floorplan pf USING (property_id)
+        LEFT JOIN property_summary ps USING (property_id)
+WHERE
+      NOT ap.development
   AND NOT ap.commercial
   AND NOT ap.auction
-  AND LOWER(ap.summary) LIKE '%garden%'
   AND ap.last_rightmove_update > TO_CHAR(CURRENT_DATE - INTERVAL '30 days', 'YYYY-MM-DD')
-  AND (not ple.excluded or ple.excluded is null)
-  AND (tp.travel_time <= 40 or tp.property_id is null)
-  AND (ps.garden in ('private', 'unknown') or ps.garden is null)
+;
+
+
+CREATE VIEW alert_properties AS
+SELECT
+    *
+FROM
+    properties_enhanced
+WHERE
+      price_amount BETWEEN 550000 AND 850000
+  AND LOWER(summary) LIKE '%garden%'
+  AND bedrooms >= 2
+  AND (area > 700 OR area IS NULL)
+  AND (NOT location_excluded OR location_excluded IS NULL)
+  AND (travel_time <= 40 OR travel_time IS NULL)
+  AND (
+          LOWER(summary) LIKE '%garden%'
+              OR LOWER(summary) LIKE '%patio%'
+              OR LOWER(summary) LIKE '%terrace%'
+              OR LOWER(summary) LIKE '%yard%'
+          )
+  AND (garden IN ('private', 'unknown') OR garden IS NULL)
 ;
 
 CREATE VIEW properties_review AS
-SELECT *
-FROM alert_properties
-ORDER BY review_id DESC
+SELECT
+    *
+FROM
+    alert_properties
+ORDER BY
+    review_id DESC
 ;
