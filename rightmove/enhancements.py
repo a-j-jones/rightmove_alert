@@ -58,11 +58,11 @@ def get_data(property_id: int) -> Dict:
     else:
         description = ""
 
-    summary = f"""## KEY FEATURES
-    {key_features}
-    
-    ## DESCRIPTION
-    {description}"""
+    summary = ""
+    if key_features:
+        summary += f"## KEY FEATURES:\n{key_features}\n"
+    if description:
+        summary += f"## DESCRIPTION:\n{description}"
 
     return {"floorplans": floorplans, "summary": summary}
 
@@ -100,12 +100,15 @@ def get_additional_data(id: int) -> Tuple[BaseModel, BaseModel]:
     # Description analysis:
     try:
         summary_text = data.get("summary")
-        analysis = analyse_summary(summary_text)
-        summary = PropertyDescription(
-            property_id=id,
-            summary=summary_text,
-            garden=analysis.get("garden"),
-        )
+        if summary_text:
+            analysis = analyse_summary(summary_text)
+            summary = PropertyDescription(
+                property_id=id,
+                summary=summary_text,
+                garden=analysis.get("garden"),
+            )
+        else:
+            summary = PropertyDescription(property_id=id)
     except Exception:
         summary = PropertyDescription(property_id=id)
 
