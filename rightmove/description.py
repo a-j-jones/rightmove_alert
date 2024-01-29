@@ -29,9 +29,10 @@ TOOLS = [{
                     "type": "string",
                     "enum": ["private", "communal", "balcony", "unknown"],
                     "description": (
-                        "The type of garden the property has, if known. The response"
-                        " should be in order of priority private > communal > balcony >"
-                        " unknown."
+                        "The type of garden the property has, if known. For example"
+                        " - If the property has a private garden or patio, the value would be 'private'."
+                        " - If the property has a communal garden, the value would be 'communal'."
+                        " - If the property has a private balcony, the value would be 'balcony'."
                     ),
                 }
             },
@@ -56,19 +57,14 @@ def analyse_summary(summary: str) -> Dict:
         {
             "role": "system",
             "content": (
-                "You are a property analyst and your job is to review property"
-                " summaries and provide structured data."
+                "You are a property analyst and your job is to review property summaries and provide structured data."
             ),
         },
         {"role": "user", "content": prompt},
     ]
 
-    chat_response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo-1106", messages=messages, tools=TOOLS
-    )
+    chat_response = openai.ChatCompletion.create(model="gpt-3.5-turbo-1106", messages=messages, tools=TOOLS)
 
-    output = json.loads(
-        chat_response.choices[0].message.tool_calls[0].function.to_dict()["arguments"]
-    )
+    output = json.loads(chat_response.choices[0].message.tool_calls[0].function.to_dict()["arguments"])
 
     return output
