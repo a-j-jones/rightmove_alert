@@ -14,7 +14,10 @@ logger = logging.getLogger(__name__)
 logger = logging_setup(logger)
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0"
+        " Safari/537.36"
+    )
 }
 
 
@@ -98,9 +101,7 @@ class Rightmove:
 
         # Parameter checks:
         if type(region_search) != str:
-            raise ValueError(
-                f"Expected string value for region_search, got: {region_search}"
-            )
+            raise ValueError(f"Expected string value for region_search, got: {region_search}")
 
         for parameter, value in {
             "lat1": lat1,
@@ -112,17 +113,13 @@ class Rightmove:
                 raise ValueError(f"Expected float value for {parameter}, got: {value}")
 
         if type(channel) != str or channel.upper() not in ["BUY", "RENT"]:
-            raise ValueError(
-                f"Expected string value of either 'BUY'/'RENT' for channel, got: {channel}"
-            )
+            raise ValueError(f"Expected string value of either 'BUY'/'RENT' for channel, got: {channel}")
 
         if type(index) != int or index < 0:
             raise ValueError(f"Expected positive integer value for index, got: {index}")
 
         if type(radius) != int or radius < 0 or radius > 200:
-            raise ValueError(
-                f"Expected integer value between 0-200 for radius, got: {radius}"
-            )
+            raise ValueError(f"Expected integer value between 0-200 for radius, got: {radius}")
 
         if type(sstc) != bool:
             raise ValueError(f"Expected boolean value for sstc, got: {sstc}")
@@ -150,9 +147,7 @@ class Rightmove:
             for item in exclude:
                 valid_exclusions = ["newHome", "retirement", "sharedOwnership"]
                 if item not in valid_exclusions:
-                    raise ValueError(
-                        f"Valid options for exclude are {valid_exclusions}, got: {item}"
-                    )
+                    raise ValueError(f"Valid options for exclude are {valid_exclusions}, got: {item}")
             params["dontShow"] = ",".join(exclude)
 
         if include:
@@ -166,15 +161,11 @@ class Rightmove:
             ]
             for item in include:
                 if item not in valid_inclusions:
-                    raise ValueError(
-                        f"Valid options for include are {valid_inclusions}, got: {item}"
-                    )
+                    raise ValueError(f"Valid options for include are {valid_inclusions}, got: {item}")
 
             params["mustHave"] = ",".join(include)
 
-        r = await self.client.get(
-            "https://www.rightmove.co.uk/api/_mapSearch", params=params, headers=HEADERS
-        )
+        r = await self.client.get("https://www.rightmove.co.uk/api/_mapSearch", params=params, headers=HEADERS)
 
         if r.status_code != 200:
             logger.debug("Map search failed.")
@@ -188,9 +179,7 @@ class Rightmove:
 
         return data
 
-    async def get_property_data(
-        self, channel: str, ids: list[int], progress: tqdm = None
-    ) -> dict:
+    async def get_property_data(self, channel: str, ids: list[int], progress: tqdm = None) -> dict:
         """
         Sends a request to the Rightmove API to get property data from each Property ID given.
         :param channel:     str RENT or BUY channel
@@ -200,9 +189,7 @@ class Rightmove:
         """
 
         if type(channel) != str or channel.upper() not in ["BUY", "RENT"]:
-            raise ValueError(
-                f"Expected string value of either 'BUY'/'RENT' for channel, got: {channel}"
-            )
+            raise ValueError(f"Expected string value of either 'BUY'/'RENT' for channel, got: {channel}")
 
         params = {"channel": channel.upper(), "propertyIds": ids, "viewType": "MAP"}
         r = await self.client.get(
