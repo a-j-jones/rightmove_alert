@@ -170,7 +170,7 @@ class Rightmove:
                         f"Valid options for include are {valid_inclusions}, got: {item}"
                     )
 
-            params["dontShow"] = ",".join(include)
+            params["mustHave"] = ",".join(include)
 
         r = await self.client.get(
             "https://www.rightmove.co.uk/api/_mapSearch", params=params, headers=HEADERS
