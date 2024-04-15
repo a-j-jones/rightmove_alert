@@ -115,11 +115,13 @@ def get_additional_data(id: int) -> Tuple[BaseModel, BaseModel]:
     return floorplan, summary
 
 
-def update_enhanced_data() -> None:
+def update_enhanced_data(ids: List = None) -> None:
     """
     Updates the floorplan images in the database.
     """
-    ids = get_enhancement_properties()
+    if not ids:
+        ids = get_enhancement_properties()
+
     progress = tqdm(
         total=len(ids),
         desc="Getting floorplans",
@@ -137,14 +139,10 @@ def update_enhanced_data() -> None:
             results.append(future.result())
 
     # Insert floorplans:
-    insert_models(
-        models=[x[0] for x in results if x is not None], table="property_floorplan"
-    )
+    insert_models(models=[x[0] for x in results if x is not None], table="property_floorplan")
 
     # Insert descriptions:
-    insert_models(
-        models=[x[1] for x in results if x is not None], table="property_summary"
-    )
+    insert_models(models=[x[1] for x in results if x is not None], table="property_summary")
 
 
 if __name__ == "__main__":

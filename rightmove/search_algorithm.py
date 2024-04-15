@@ -1,6 +1,6 @@
 import asyncio
 import datetime as dt
-from typing import Optional, List
+from typing import List, Optional
 
 import numpy as np
 from tqdm.asyncio import tqdm
@@ -13,9 +13,7 @@ class RightmoveSearcher:
     def __init__(self, rightmove_api: Rightmove, database: RightmoveDatabase):
         self.rm = rightmove_api
         self.database = database
-        self.progress_format = (
-            "{desc:<20} {percentage:3.0f}%|{bar}| remaining: {remaining_s:.1f}"
-        )
+        self.progress_format = "{desc:<20} {percentage:3.0f}%|{bar}| remaining: {remaining_s:.1f}"
         self.progress = None
         self.properties = {}
         self.tasks = []
@@ -32,8 +30,8 @@ class RightmoveSearcher:
         index: Optional[int] = 0,
         radius: Optional[int] = 5,
         sstc: Optional[bool] = False,
-        exclude: Optional[list] = None,
-        include: Optional[list] = None,
+        exclude: Optional[List[str]] = None,
+        include: Optional[List[str]] = None,
     ) -> None:
         """
         Interacts with the rightmove.Rightmove API wrapper to perform a grid search of an entire area, finding
@@ -102,13 +100,9 @@ class RightmoveSearcher:
         for viewport in self.get_new_viewports(lat1, lat2, lon1, lon2):
             api_args.update(viewport)
             # print(f"Running code for {viewport}")
-            self.tasks.append(
-                asyncio.create_task(self._get_all_properties_recurse(**api_args))
-            )
+            self.tasks.append(asyncio.create_task(self._get_all_properties_recurse(**api_args)))
 
-    async def get_all_property_data(
-        self, update: bool = False, update_cutoff: dt.datetime = None
-    ) -> None:
+    async def get_all_property_data(self, update: bool = False, update_cutoff: dt.datetime = None) -> None:
         """
         Gets all property data for both RENT/BUY channels and uploads to the Database.
         :param update:          bool            If True the function will look to update data for already held
@@ -117,20 +111,14 @@ class RightmoveSearcher:
         """
 
         for channel in ["RENT", "BUY"]:
-            total = self.database.get_id_len(
-                update, channel=channel, update_cutoff=update_cutoff
-            )
+            total = self.database.get_id_len(update, channel=channel, update_cutoff=update_cutoff)
             self.progress = tqdm(
                 total=total,
                 desc=f"Downloading {channel}",
                 bar_format=self.progress_format,
             )
-            for ids in self.database.get_id_list(
-                update, channel=channel, update_cutoff=update_cutoff
-            ):
-                await self.rm.get_property_data(
-                    channel=channel, ids=ids, progress=self.progress
-                )
+            for ids in self.database.get_id_list(update, channel=channel, update_cutoff=update_cutoff):
+                await self.rm.get_property_data(channel=channel, ids=ids, progress=self.progress)
             self.progress.close()
 
     @staticmethod
@@ -149,9 +137,7 @@ class RightmoveSearcher:
         return a * b
 
     @staticmethod
-    def get_new_viewports(
-        lat1: float, lat2: float, lon1: float, lon2: float
-    ) -> List[dict]:
+    def get_new_viewports(lat1: float, lat2: float, lon1: float, lon2: float) -> List[dict]:
         """
         Takes a viewport and divides it into two equal viewports which can then be used to narrow the search
         for properties.
