@@ -8,12 +8,7 @@ from psycopg2 import extras
 from pydantic import BaseModel
 
 from config import DATABASE_URI
-from rightmove.models import (
-    PropertyData,
-    EmailAddress,
-    ReviewDates,
-    ReviewedProperties,
-)
+from rightmove.models import EmailAddress, PropertyData, ReviewDates, ReviewedProperties
 
 
 def get_database_connection():

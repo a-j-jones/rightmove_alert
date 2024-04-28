@@ -2,13 +2,14 @@ import logging
 from functools import lru_cache
 from json import JSONDecodeError
 from textwrap import wrap
-from typing import Optional, Dict
+from typing import Dict, Optional
 
 import httpx
 import requests
 from tqdm.asyncio import tqdm
 
 from config.logging import logging_setup
+from rightmove.async_database import RightmoveDatabase
 
 logger = logging.getLogger(__name__)
 logger = logging_setup(logger)
@@ -22,7 +23,7 @@ HEADERS = {
 
 
 class Rightmove:
-    def __init__(self, database):
+    def __init__(self, database: RightmoveDatabase):
         self.database = database
         self.properties: Dict = {}
 
@@ -204,7 +205,7 @@ class Rightmove:
 
         try:
             data = r.json()["properties"]
-            self.database.load_property_data(data, ids)
+            await self.database.load_property_data(data, ids)
         except JSONDecodeError:
             data = None
 
@@ -213,10 +214,10 @@ class Rightmove:
 
         return data
 
-    def save_property_data(self, channel) -> None:
+    async def save_property_data(self, channel) -> None:
         """
         Loads the property data into the database.
         """
         logger.info("Saving property data to database...")
-        self.database.load_map_properties(self.properties, channel=channel)
+        await self.database.load_map_properties(self.properties, channel=channel)
         self.properties = {}

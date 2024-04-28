@@ -1,8 +1,8 @@
 import logging
 import random
 import re
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import List, Dict, Tuple
+from concurrent.futures import as_completed, ThreadPoolExecutor
+from typing import Dict, List, Tuple
 
 import requests
 from bs4 import BeautifulSoup
@@ -11,9 +11,8 @@ from tqdm import tqdm
 
 from config.logging import logging_setup
 from rightmove.database import get_enhancement_properties, insert_models
-from rightmove.description import analyse_summary
-from rightmove.floorplan import download_img, extract_text, extract_internal_area
-from rightmove.models import PropertyFloorplan, PropertyDescription
+from rightmove.floorplan import download_img, extract_internal_area, extract_text
+from rightmove.models import PropertyDescription, PropertyFloorplan
 from rightmove.utils import USER_AGENTS
 
 logger = logging.getLogger(__name__)
@@ -98,19 +97,19 @@ def get_additional_data(id: int) -> Tuple[BaseModel, BaseModel]:
         floorplan = PropertyFloorplan(property_id=id)
 
     # Description analysis:
-    try:
-        summary_text = data.get("summary")
-        if summary_text:
-            analysis = analyse_summary(summary_text)
-            summary = PropertyDescription(
-                property_id=id,
-                summary=summary_text,
-                garden=analysis.get("garden"),
-            )
-        else:
-            summary = PropertyDescription(property_id=id)
-    except Exception:
-        summary = PropertyDescription(property_id=id)
+    # try:
+    #     summary_text = data.get("summary")
+    #     if summary_text:
+    #         analysis = analyse_summary(summary_text)
+    #         summary = PropertyDescription(
+    #             property_id=id,
+    #             summary=summary_text,
+    #             garden=analysis.get("garden"),
+    #         )
+    #     else:
+    #         summary = PropertyDescription(property_id=id)
+    # except Exception:
+    summary = PropertyDescription(property_id=id)
 
     return floorplan, summary
 

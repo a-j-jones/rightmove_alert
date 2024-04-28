@@ -9,7 +9,6 @@ from rightmove.enhancements import update_enhanced_data
 from rightmove.geolocation import update_locations
 from rightmove.run import (
     download_property_data,
-    download_properties,
 )
 
 logger = logging.getLogger(__name__)
@@ -19,7 +18,7 @@ logger = logging_setup(logger)
 def main():
     # Download the latest properties and data:
     logger.info("Downloading properties and data...")
-    asyncio.run(download_properties("BUY"))
+    # asyncio.run(download_properties("BUY"))
     asyncio.run(download_property_data(update=True))
 
     # Update geolocation data:

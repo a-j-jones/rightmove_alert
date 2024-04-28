@@ -6,7 +6,7 @@ import numpy as np
 from tqdm.asyncio import tqdm
 
 from rightmove.api_wrapper import Rightmove
-from rightmove.database import RightmoveDatabase
+from rightmove.async_database import RightmoveDatabase
 
 
 class RightmoveSearcher:
@@ -111,13 +111,14 @@ class RightmoveSearcher:
         """
 
         for channel in ["RENT", "BUY"]:
-            total = self.database.get_id_len(update, channel=channel, update_cutoff=update_cutoff)
+            total = await self.database.get_id_len(update, channel=channel, update_cutoff=update_cutoff)
             self.progress = tqdm(
                 total=total,
                 desc=f"Downloading {channel}",
                 bar_format=self.progress_format,
             )
-            for ids in self.database.get_id_list(update, channel=channel, update_cutoff=update_cutoff):
+
+            async for ids in self.database.get_id_list(update, channel=channel, update_cutoff=update_cutoff):
                 await self.rm.get_property_data(channel=channel, ids=ids, progress=self.progress)
             self.progress.close()
 
